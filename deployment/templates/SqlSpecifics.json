@@ -2,6 +2,10 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "centralus"
+    },
     "serverName": {
       "type": "string",
       "defaultValue": "[resourceGroup().name]",
@@ -30,7 +34,7 @@
       "type": "Microsoft.Sql/servers/databases",
       "apiVersion": "2019-06-01-preview",
       "name": "[concat(parameters('serverName'), '/', parameters('databaseName'))]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "sku": {
         "name": "[parameters('databaseSku')]"
       }

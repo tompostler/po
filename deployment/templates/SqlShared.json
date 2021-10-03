@@ -2,6 +2,10 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "centralus"
+    },
     "administratorLoginName": {
       "type": "string",
       "defaultValue": "sqladmin",
@@ -22,7 +26,7 @@
       "type": "Microsoft.Sql/servers",
       "apiVersion": "2019-06-01-preview",
       "name": "[resourceGroup().name]",
-      "location": "[resourceGroup().location]",
+      "location": "[parameters('location')]",
       "properties": {
         "administratorLogin": "[parameters('administratorLoginName')]",
         "administratorLoginPassword": "[parameters('administratorLoginPassword')]"
