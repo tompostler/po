@@ -1,0 +1,52 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'windows-latest'
+
+name: '$(Date:%y).$(DayOfYear).$(Rev:r)'
+
+steps:
+
+- task: Powershell@2
+  displayName: Calculate MSBuild Versions
+  inputs:
+    targetType: 'inline'
+    script: |
+      $Version = "$(Build.BuildNumber)";
+      $InfoVersion = $Version + '+' + "$(Build.SourceVersion)".Substring(0,7);
+
+      Write-Host "Version:      $Version";
+      Write-Host "InfoVersion:  $InfoVersion";
+
+      Write-Output "##vso[task.setvariable variable=Version]$Version";
+      Write-Output "##vso[task.setvariable variable=InfoVersion]$InfoVersion";
+
+- task: DotNetCoreCLI@2
+  displayName: Restore nuget packages
+  inputs:
+    command: restore
+    projects: src/po.sln
+
+- task: DotNetCoreCLI@2
+  displayName: Build and zip to the staging directory (linux-x64)
+  inputs:
+    command: publish
+    projects: src/po.sln
+    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output /p:Version="$(Version)" /p:InformationalVersion="$(InfoVersion)"'
+    zipAfterPublish: true
+    modifyOutputPath: true
+
+- task: CopyFiles@2
+  displayName: Copy deployment files to output
+  inputs:
+    sourceFolder: $(Build.SourcesDirectory)/deployment/
+    contents: '**' 
+    targetFolder: $(Build.ArtifactStagingDirectory)
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish build artifacts
+  inputs:
+    pathToPublish: $(Build.ArtifactStagingDirectory)
+    artifactName: drop
+    publishLocation: Container
