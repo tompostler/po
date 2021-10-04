@@ -12,6 +12,8 @@
     <LangVersion>8.0</LangVersion>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
+
+    <EFCoreVersion>5.0.10</EFCoreVersion>
   </PropertyGroup>
 
   <!-- Populate version variables based on GitVersion if available. This will usually be run in the build definition. -->

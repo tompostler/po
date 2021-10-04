@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
@@ -28,9 +30,17 @@ namespace po
                 .AddJsonOptions(options =>
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
                 );
+
             services.AddLogging(options => options.AddConsole());
             services.AddApplicationInsightsTelemetry();
+
             services.Configure<Options.Sql>(this.Configuration.GetSection(nameof(Options.Sql)));
+
+            services.AddDbContext<DataAccess.PoContext>((provider, options) => options
+                .UseSqlServer(
+                    provider.GetRequiredService<IOptions<Options.Sql>>().Value.ConnectionString,
+                    sqloptions => sqloptions
+                        .EnableRetryOnFailure()));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
