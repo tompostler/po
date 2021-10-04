@@ -41,6 +41,8 @@ namespace po
                     provider.GetRequiredService<IOptions<Options.Sql>>().Value.ConnectionString,
                     sqloptions => sqloptions
                         .EnableRetryOnFailure()));
+
+            services.AddHostedService<Services.MigrationService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
