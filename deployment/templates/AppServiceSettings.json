@@ -6,10 +6,12 @@
       "type": "string"
     },
     "sqlDatabaseName": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "po"
     },
     "sqlAdminUsername": {
-      "type": "string"
+      "type": "string",
+      "defaultValue": "sqladmin"
     },
     "sqlAdminPassword": {
       "type": "securestring"
