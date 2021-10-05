@@ -52,22 +52,7 @@ steps:
     echo CommitsSinceVersionSourcePadded: $(GitVersion.CommitsSinceVersionSourcePadded)
     echo UncommittedChanges: $(GitVersion.UncommittedChanges)
     echo CommitDate: $(GitVersion.CommitDate)
-
-- task: Powershell@2
-  displayName: Calculate MSBuild Versions
-  inputs:
-    targetType: 'inline'
-    script: |
-      $Version = "$(Build.BuildNumber)";
-      $InfoVersion = $Version + '+' + "$(Build.SourceVersion)".Substring(0,7);
-
-      Write-Host "Version:      $Version";
-      Write-Host "InfoVersion:  $InfoVersion";
-
-      throw 'Break here';
-
-      Write-Output "##vso[task.setvariable variable=Version]$Version";
-      Write-Output "##vso[task.setvariable variable=InfoVersion]$InfoVersion";
+  displayName: Display version info
 
 - task: DotNetCoreCLI@2
   displayName: Restore nuget packages
@@ -80,7 +65,7 @@ steps:
   inputs:
     command: publish
     projects: src/po.sln
-    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output /p:Version="$(Version)" /p:InformationalVersion="$(InfoVersion)"'
+    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output /p:Version="$(GitVersion.FullSemVer)" /p:InformationalVersion="$(GitVersion.FullSemVer)+$(GitVersion.ShortSha)"'
     zipAfterPublish: true
     modifyOutputPath: true
 
