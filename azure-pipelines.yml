@@ -9,14 +9,14 @@ name: '$(Date:%y).$(DayOfYear).$(Rev:r)'
 steps:
 
 - task: gitversion/setup@0
-displayName: Install GitVersion
-inputs:
-  versionSpec: '5.7.x'
+  displayName: Install GitVersion
+  inputs:
+    versionSpec: '5.7.x'
 
 - task: gitversion/execute@0
-displayName: Determine Version
-inputs:
-  useConfigFile: true
+  displayName: Determine Version
+  inputs:
+    useConfigFile: true
 
 - script: |
   echo Major: $(GitVersion.Major)
