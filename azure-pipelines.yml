@@ -8,9 +8,6 @@ name: '$(Date:%y).$(DayOfYear).$(Rev:r)'
 
 steps:
 
-- checkout: self
-  fetchDepth: 2 # Fetch only the last two commits
-
 - task: gitversion/setup@0
   displayName: Install GitVersion
   inputs:
