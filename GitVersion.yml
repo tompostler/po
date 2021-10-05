@@ -1,4 +1,3 @@
+assembly-file-versioning-scheme: MajorMinorPatch
+assembly-informational-format: '{Major}.{Minor}.{Patch}+{ShortSha}'
 mode: Mainline
-branches: {}
-ignore:
-  sha: []
