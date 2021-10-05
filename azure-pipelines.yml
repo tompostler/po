@@ -49,6 +49,7 @@ steps:
     publishLocation: Container
 
 - task: Powershell@2
+  displayName: Calculate MSBuild Versions
   inputs:
     targetType: 'inline'
     script: |
