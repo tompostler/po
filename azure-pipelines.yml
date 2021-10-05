@@ -51,4 +51,5 @@ steps:
 - task: Powershell@2
   inputs:
     targetType: 'inline'
-    script: throw 'Break here';
+    script: |
+      throw 'Break here';
