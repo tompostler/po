@@ -30,7 +30,7 @@ steps:
   inputs:
     command: publish
     projects: src/po.sln
-    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output
+    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output'
     zipAfterPublish: true
     modifyOutputPath: true
 
@@ -49,8 +49,6 @@ steps:
     publishLocation: Container
 
 - task: Powershell@2
-  displayName: Calculate MSBuild Versions
   inputs:
     targetType: 'inline'
-    script: |
-      throw 'Break here';
+    script: throw 'Break here';
