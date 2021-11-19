@@ -11,13 +11,13 @@ steps:
 - task: gitversion/setup@0
   displayName: Install GitVersion
   inputs:
-    versionSpec: '5.7.x'
+    versionSpec: 5.8.x
 
 - task: gitversion/execute@0
   displayName: Determine Version
   inputs:
     useConfigFile: true
-    configFilePath: 'GitVersion.yml'
+    configFilePath: GitVersion.yml
 
 - task: DotNetCoreCLI@2
   displayName: Restore nuget packages
