@@ -19,11 +19,14 @@ steps:
     useConfigFile: true
     configFilePath: 'GitVersion.yml'
 
-- task: DotNetCoreCLI@2
-  displayName: Restore nuget packages
+- task: NuGetToolInstaller@1
+  inputs:
+    versionSpec: 6.0.*
+
+- task: NuGetCommand@2
   inputs:
     command: restore
-    projects: src/po.sln
+    restoreSolution: src/po.sln
 
 - task: DotNetCoreCLI@2
   displayName: Build and zip to the staging directory (linux-x64)
