@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: windows-2022
 
 name: '$(Date:%y).$(DayOfYear).$(Rev:r)'
 
@@ -19,14 +19,11 @@ steps:
     useConfigFile: true
     configFilePath: 'GitVersion.yml'
 
-- task: NuGetToolInstaller@1
-  inputs:
-    versionSpec: 6.0.*
-
-- task: NuGetCommand@2
+- task: DotNetCoreCLI@2
+  displayName: Restore nuget packages
   inputs:
     command: restore
-    restoreSolution: src/po.sln
+    projects: src/po.sln
 
 - task: DotNetCoreCLI@2
   displayName: Build and zip to the staging directory (linux-x64)
