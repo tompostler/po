@@ -29,8 +29,8 @@ steps:
   displayName: Build and zip to the staging directory (linux-x64)
   inputs:
     command: publish
-    projects: src/po.sln
-    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output'
+    projects: src/po/po.csproj
+    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output --no-self-contained'
     zipAfterPublish: true
     modifyOutputPath: true
 

@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  
+
   <ItemGroup>
     <None Include="..\..\deployment\**\*" Link="%(RecursiveDir)\%(Filename)%(Extension)" />
   </ItemGroup>
