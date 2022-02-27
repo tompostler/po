@@ -13,7 +13,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
 
-    <EFCoreVersion>6.0.0</EFCoreVersion>
+    <EFCoreVersion>6.0.2</EFCoreVersion>
   </PropertyGroup>
 
   <!-- Populate version variables based on GitVersion if available. This will usually be run in the build definition. -->

@@ -25,32 +25,35 @@ namespace po.Middleware
             }
             catch (Exception ex)
             {
-                this.logger.LogError(ex, "Caught an unhandled exception!");
-
                 if (httpContext.Response.HasStarted)
                 {
-                    this.logger.LogError("Response in progress. Could not rewrite!");
+                    this.logger.LogError(ex, "Response in progress. Could not rewrite!");
                 }
                 else
                 {
                     if (ex is BadRequestException)
                     {
+                        this.logger.LogWarning(ex, "Caught an unhandled exception!");
                         httpContext.Response.StatusCode = 400;
                     }
                     else if (ex is UnauthorizedException)
                     {
+                        this.logger.LogWarning(ex, "Caught an unhandled exception!");
                         httpContext.Response.StatusCode = 401;
                     }
                     else if (ex is NotFoundException)
                     {
+                        this.logger.LogWarning(ex, "Caught an unhandled exception!");
                         httpContext.Response.StatusCode = 404;
                     }
                     else if (ex is ConflictException)
                     {
+                        this.logger.LogWarning(ex, "Caught an unhandled exception!");
                         httpContext.Response.StatusCode = 409;
                     }
                     else
                     {
+                        this.logger.LogError(ex, "Caught an unhandled exception!");
                         httpContext.Response.StatusCode = 500;
                     }
                     httpContext.Response.ContentType = "text/plain";
