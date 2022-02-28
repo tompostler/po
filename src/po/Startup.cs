@@ -34,6 +34,7 @@ namespace po
             services.AddLogging(options => options.AddConsole());
             services.AddApplicationInsightsTelemetry();
 
+            services.Configure<Options.Discord>(this.Configuration.GetSection(nameof(Options.Discord)));
             services.Configure<Options.Sql>(this.Configuration.GetSection(nameof(Options.Sql)));
 
             services.AddDbContext<DataAccess.PoContext>((provider, options) => options

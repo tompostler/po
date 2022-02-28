@@ -26,7 +26,7 @@ namespace po.Services
             this.discordClient.Log += this.DiscordClientLog;
 
             string botToken = this.options.Value.BotToken;
-            this.logger.LogInformation($"Token is {botToken.Length} characters long and the first 5 are {botToken.Substring(0, 5)}");
+            this.logger.LogInformation($"Token is {botToken.Length} characters.");
 
             await this.discordClient.LoginAsync(Discord.TokenType.Bot, botToken);
             await this.discordClient.StartAsync();
