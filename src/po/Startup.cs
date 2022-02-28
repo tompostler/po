@@ -42,6 +42,8 @@ namespace po
                     sqloptions => sqloptions
                         .EnableRetryOnFailure()));
 
+            services.AddSingleton<DataAccess.MigrationInitCompletionSignal>();
+
             services.AddHostedService<Services.MigrationService>();
             services.AddHostedService<Services.BotService>();
         }

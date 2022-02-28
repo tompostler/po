@@ -11,13 +11,16 @@ namespace po.Services
 {
     public sealed class MigrationService : IHostedService
     {
+        private readonly MigrationInitCompletionSignal signal;
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger<MigrationService> logger;
 
         public MigrationService(
+            MigrationInitCompletionSignal signal,
             IServiceProvider serviceProvider,
             ILogger<MigrationService> logger)
         {
+            this.signal = signal;
             this.serviceProvider = serviceProvider;
             this.logger = logger;
         }
@@ -30,6 +33,9 @@ namespace po.Services
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
 
             await poContext.Database.MigrateAsync(cancellationToken);
+
+            this.logger.LogInformation("Migrations complete.");
+            this.signal.SignalCompletion();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
