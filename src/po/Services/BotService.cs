@@ -23,13 +23,16 @@ namespace po.Services
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             this.discordClient = new DiscordSocketClient();
-            this.discordClient.Log += this.DiscordClient_Log;
+            this.discordClient.Log += this.DiscordClientLog;
 
-            await this.discordClient.LoginAsync(Discord.TokenType.Bot, this.options.Value.BotToken);
+            string botToken = this.options.Value.BotToken;
+            this.logger.LogInformation($"Token is {botToken.Length} characters long and the first 5 are {botToken.Substring(0, 5)}");
+
+            await this.discordClient.LoginAsync(Discord.TokenType.Bot, botToken);
             await this.discordClient.StartAsync();
         }
 
-        private Task DiscordClient_Log(Discord.LogMessage arg)
+        private Task DiscordClientLog(Discord.LogMessage arg)
         {
             var logLevel = arg.Severity switch
             {
