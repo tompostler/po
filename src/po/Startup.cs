@@ -43,6 +43,7 @@ namespace po
                         .EnableRetryOnFailure()));
 
             services.AddHostedService<Services.MigrationService>();
+            services.AddHostedService<Services.BotService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
