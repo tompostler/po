@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using po.Extensions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,36 +31,18 @@ namespace po.Services
 
         private Task DiscordClient_Log(Discord.LogMessage arg)
         {
-            switch (arg.Severity)
+            var logLevel = arg.Severity switch
             {
-                case Discord.LogSeverity.Critical:
-                    this.logger.LogCritical(arg.Exception, arg.Message);
-                    break;
+                Discord.LogSeverity.Critical => LogLevel.Critical,
+                Discord.LogSeverity.Error => LogLevel.Error,
+                Discord.LogSeverity.Warning => LogLevel.Warning,
+                Discord.LogSeverity.Info => LogLevel.Information,
+                Discord.LogSeverity.Verbose => LogLevel.Trace,
+                Discord.LogSeverity.Debug => LogLevel.Debug,
+                _ => LogLevel.Information
+            };
 
-                case Discord.LogSeverity.Error:
-                    this.logger.LogError(arg.Exception, arg.Message);
-                    break;
-
-                case Discord.LogSeverity.Warning:
-                    this.logger.LogWarning(arg.Exception, arg.Message);
-                    break;
-
-                case Discord.LogSeverity.Info:
-                    this.logger.LogInformation(arg.Exception, arg.Message);
-                    break;
-
-                case Discord.LogSeverity.Verbose:
-                    this.logger.LogTrace(arg.Exception, arg.Message);
-                    break;
-
-                case Discord.LogSeverity.Debug:
-                    this.logger.LogDebug(arg.Exception, arg.Message);
-                    break;
-
-                default:
-                    this.logger.LogInformation($"Uknown log severity: {arg.ToJsonString()}");
-                    break;
-            }
+            this.logger.Log(logLevel, arg.ToString(prependTimestamp: false));
 
             return Task.CompletedTask;
         }
