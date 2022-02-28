@@ -30,7 +30,7 @@ steps:
   inputs:
     command: publish
     projects: src/po/po.csproj
-    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output --self-contained'
+    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output --no-self-contained'
     zipAfterPublish: true
     modifyOutputPath: true
 
