@@ -2,6 +2,12 @@
   "$schema": "http://schemas.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    "discordBotPrimaryId": {
+      "type": "string"
+    },
+    "discordBotNotificationChannelId": {
+      "type": "string"
+    },
     "discordBotToken": {
       "type": "securestring"
     },
@@ -38,6 +44,8 @@
       "name": "[concat(parameters('siteName'), '/appsettings')]",
       "properties": {
         "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', parameters('planName')), '2015-05-01').InstrumentationKey]",
+        "Discord__BotPrimaryGuildId": "[parameters('discordBotPrimaryId')]",
+        "Discord__BotNotificationChannelId": "[parameters('discordBotNotificationChannelId')]",
         "Discord__BotToken": "[parameters('discordBotToken')]",
         "Sql__ConnectionString": "[variables('sqlConnectionString')]",
         "WEBSITE_RUN_FROM_PACKAGE": "1"

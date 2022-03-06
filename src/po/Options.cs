@@ -14,6 +14,8 @@ namespace po
 
         public sealed class Discord
         {
+            public ulong BotPrimaryGuildId { get; set; }
+            public ulong BotNotificationChannelId { get; set; }
             public string BotToken { get; set; }
         }
         public sealed class Sql

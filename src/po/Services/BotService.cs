@@ -3,7 +3,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using po.DataAccess;
-using po.Extensions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,7 +11,7 @@ namespace po.Services
     public sealed class BotService : IHostedService
     {
         private readonly MigrationInitCompletionSignal signal;
-        private readonly IOptions<Options.Discord> options;
+        private readonly Options.Discord options;
         private readonly ILogger<BotService> logger;
 
         private DiscordSocketClient discordClient;
@@ -23,7 +22,7 @@ namespace po.Services
             ILogger<BotService> logger)
         {
             this.signal = signal;
-            this.options = options;
+            this.options = options.Value;
             this.logger = logger;
         }
 
@@ -31,9 +30,9 @@ namespace po.Services
         {
             this.discordClient = new DiscordSocketClient();
             this.discordClient.Log += this.DiscordClientLog;
-            this.discordClient.MessageReceived += this.DiscoreMessageReceived;
+            this.discordClient.MessageReceived += this.DiscordMessageReceived;
 
-            string botToken = this.options.Value.BotToken;
+            string botToken = this.options.BotToken;
             this.logger.LogInformation($"Token is {botToken?.Length.ToString() ?? "<null>"} characters.");
 
             await this.discordClient.LoginAsync(Discord.TokenType.Bot, botToken);
@@ -60,7 +59,7 @@ namespace po.Services
             return Task.CompletedTask;
         }
 
-        private Task DiscoreMessageReceived(SocketMessage message)
+        private Task DiscordMessageReceived(SocketMessage message)
         {
             this.logger.LogInformation($"Message received: {message}");
 
@@ -83,6 +82,10 @@ namespace po.Services
         {
             await this.signal.WaitForCompletionAsync(cancellationToken);
             this.logger.LogInformation("Migration completion signal received. Starting data sync.");
+
+            SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
+            SocketTextChannel notificationTextChannel = primaryGuild.GetTextChannel(this.options.BotNotificationChannelId);
+            _ = await notificationTextChannel.SendMessageAsync("I live!");
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
