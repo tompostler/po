@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using po.DataAccess;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -83,9 +84,21 @@ namespace po.Services
             await this.signal.WaitForCompletionAsync(cancellationToken);
             this.logger.LogInformation("Migration completion signal received. Starting data sync.");
 
-            SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
-            SocketTextChannel notificationTextChannel = primaryGuild.GetTextChannel(this.options.BotNotificationChannelId);
-            _ = await notificationTextChannel.SendMessageAsync("I live!");
+            await this.TrySendStartupMessageAsync();
+        }
+
+        private async Task TrySendStartupMessageAsync()
+        {
+            try
+            {
+                SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
+                SocketTextChannel notificationTextChannel = primaryGuild.GetTextChannel(this.options.BotNotificationChannelId);
+                _ = await notificationTextChannel.SendMessageAsync("I live!");
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError($"Could not send startup message: {ex}");
+            }
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
