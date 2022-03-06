@@ -89,6 +89,7 @@ namespace po.Services
 
         private async Task TrySendStartupMessageAsync()
         {
+            this.logger.LogInformation($"Attempting to send startup message to {this.options.BotPrimaryGuildId}/{this.options.BotNotificationChannelId}");
             try
             {
                 SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
