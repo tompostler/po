@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using po.DataAccess;
+using po.Extensions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,6 +31,7 @@ namespace po.Services
         {
             this.discordClient = new DiscordSocketClient();
             this.discordClient.Log += this.DiscordClientLog;
+            this.discordClient.MessageReceived += this.DiscoreMessageReceived;
 
             string botToken = this.options.Value.BotToken;
             this.logger.LogInformation($"Token is {botToken?.Length.ToString() ?? "<null>"} characters.");
@@ -54,6 +56,25 @@ namespace po.Services
             };
 
             this.logger.Log(logLevel, arg.ToString(prependTimestamp: false));
+
+            return Task.CompletedTask;
+        }
+
+        private Task DiscoreMessageReceived(SocketMessage message)
+        {
+            this.logger.LogInformation($"Message received: {message.ToJsonString()}");
+
+            // Bail out if it's a System Message.
+            if (message is not SocketUserMessage userMessage)
+            {
+                return Task.CompletedTask;
+            }
+
+            // We don't want the bot to respond to itself or other bots.
+            if (userMessage.Author.Id == this.discordClient.CurrentUser.Id || userMessage.Author.IsBot)
+            {
+                return Task.CompletedTask;
+            }
 
             return Task.CompletedTask;
         }
