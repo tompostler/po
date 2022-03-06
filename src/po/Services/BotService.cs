@@ -62,7 +62,7 @@ namespace po.Services
 
         private Task DiscoreMessageReceived(SocketMessage message)
         {
-            this.logger.LogInformation($"Message received: {message.ToJsonString()}");
+            this.logger.LogInformation($"Message received: {message}");
 
             // Bail out if it's a System Message.
             if (message is not SocketUserMessage userMessage)
