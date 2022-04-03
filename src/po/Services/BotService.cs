@@ -44,7 +44,7 @@ namespace po.Services
 
         private Task DiscordClientLog(Discord.LogMessage arg)
         {
-            var logLevel = arg.Severity switch
+            LogLevel logLevel = arg.Severity switch
             {
                 Discord.LogSeverity.Critical => LogLevel.Critical,
                 Discord.LogSeverity.Error => LogLevel.Error,

@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "po", "po\po.csproj", "{C2BA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{29C5FE9C-C64A-4994-AFF4-963906F44E92}"
 	ProjectSection(SolutionItems) = preProject
+		..\.editorConfig = ..\.editorConfig
+		..\.gitignore = ..\.gitignore
 		..\azure-pipelines.yml = ..\azure-pipelines.yml
 		..\devinit.ps1 = ..\devinit.ps1
 		..\Directory.build.props = ..\Directory.build.props
