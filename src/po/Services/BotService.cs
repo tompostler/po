@@ -1,4 +1,5 @@
 ﻿using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,6 +13,7 @@ namespace po.Services
 {
     public sealed class BotService : IHostedService
     {
+        private readonly IServiceProvider serviceProvider;
         private readonly Sentinals sentinals;
         private readonly Options.Discord options;
         private readonly ILogger<BotService> logger;
@@ -19,10 +21,12 @@ namespace po.Services
         private DiscordSocketClient discordClient;
 
         public BotService(
+            IServiceProvider serviceProvider,
             Sentinals sentinals,
             IOptions<Options.Discord> options,
             ILogger<BotService> logger)
         {
+            this.serviceProvider = serviceProvider;
             this.sentinals = sentinals;
             this.options = options.Value;
             this.logger = logger;
@@ -92,6 +96,9 @@ namespace po.Services
         {
             await this.sentinals.DBMigration.WaitForCompletionAsync(cancellationToken);
             this.logger.LogInformation("Migration completion signal received. Starting data sync.");
+
+            using IServiceScope scope = this.serviceProvider.CreateScope();
+            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
         }
 
         private async Task TrySendStartupMessageAsync()
