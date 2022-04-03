@@ -13,15 +13,15 @@ Write-Host;
 Write-Host -ForegroundColor Cyan 'Generating local settings....';
 $localSettings = [PSCustomObject]@{
     Discord = [PSCustomObject]@{
-        BotPrimaryGuildId        = (Get-AzKeyVaultSecret -VaultName tompostler -Name discord-pobot-bot-primary-guild-id).SecretValueText;
-        BotNotificationChannelId = (Get-AzKeyVaultSecret -VaultName tompostler -Name discord-pobot-bot-notification-channel-id).SecretValueText;
-        BotToken                 = (Get-AzKeyVaultSecret -VaultName tompostler -Name discord-pobot-bot-token).SecretValueText;
+        BotPrimaryGuildId        = (Get-AzKeyVaultSecret -VaultName tompostler -Name discord-pobot-bot-primary-guild-id -AsPlainText);
+        BotNotificationChannelId = (Get-AzKeyVaultSecret -VaultName tompostler -Name discord-pobot-bot-notification-channel-id -AsPlainText);
+        BotToken                 = (Get-AzKeyVaultSecret -VaultName tompostler -Name discord-pobot-bot-token -AsPlainText);
     };
     Sql     = [PSCustomObject]@{
         ConnectionString = (
             'Server=tcp:tompostler.database.windows.net,1433;Initial Catalog=polocal;Persist Security Info=False;' `
                 + 'User ID=sqladmin;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Password=' `
-                + (Get-AzKeyVaultSecret -VaultName tompostler -Name tompostler-sqladmin-password).SecretValueText `
+                + (Get-AzKeyVaultSecret -VaultName tompostler -Name tompostler-sqladmin-password -AsPlainText) `
                 + ';');
     };
 };

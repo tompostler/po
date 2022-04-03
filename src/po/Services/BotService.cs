@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using po.DataAccess;
+using po.Utilities;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,18 +12,18 @@ namespace po.Services
 {
     public sealed class BotService : IHostedService
     {
-        private readonly MigrationInitCompletionSignal signal;
+        private readonly Sentinals sentinals;
         private readonly Options.Discord options;
         private readonly ILogger<BotService> logger;
 
         private DiscordSocketClient discordClient;
 
         public BotService(
-            MigrationInitCompletionSignal signal,
+            Sentinals sentinals,
             IOptions<Options.Discord> options,
             ILogger<BotService> logger)
         {
-            this.signal = signal;
+            this.sentinals = sentinals;
             this.options = options.Value;
             this.logger = logger;
         }
@@ -39,7 +40,7 @@ namespace po.Services
             await this.discordClient.LoginAsync(Discord.TokenType.Bot, botToken);
             await this.discordClient.StartAsync();
 
-            _ = this.EnsureStoredDataMatchesAsync(cancellationToken);
+            this.discordClient.Ready += () => this.DiscordClientReady(cancellationToken);
         }
 
         private Task DiscordClientLog(Discord.LogMessage arg)
@@ -79,12 +80,18 @@ namespace po.Services
             return Task.CompletedTask;
         }
 
-        private async Task EnsureStoredDataMatchesAsync(CancellationToken cancellationToken)
+        private async Task DiscordClientReady(CancellationToken cancellationToken)
         {
-            await this.signal.WaitForCompletionAsync(cancellationToken);
-            this.logger.LogInformation("Migration completion signal received. Starting data sync.");
-
+            await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
             await this.TrySendStartupMessageAsync();
+
+            this.discordClient.Ready -= () => this.DiscordClientReady(cancellationToken);
+        }
+
+        private async Task EnsureDataModelIsUpToDateAsync(CancellationToken cancellationToken)
+        {
+            await this.sentinals.DBMigration.WaitForCompletionAsync(cancellationToken);
+            this.logger.LogInformation("Migration completion signal received. Starting data sync.");
         }
 
         private async Task TrySendStartupMessageAsync()
@@ -94,7 +101,7 @@ namespace po.Services
             {
                 SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
                 SocketTextChannel notificationTextChannel = primaryGuild.GetTextChannel(this.options.BotNotificationChannelId);
-                _ = await notificationTextChannel.SendMessageAsync("I live!");
+                _ = await notificationTextChannel.SendMessageAsync($"I have been restarted. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}");
             }
             catch (Exception ex)
             {
@@ -104,8 +111,8 @@ namespace po.Services
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            await this.discordClient.StopAsync();
             await this.discordClient.LogoutAsync();
+            await this.discordClient.StopAsync();
         }
     }
 }

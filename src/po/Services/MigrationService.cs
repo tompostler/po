@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using po.DataAccess;
+using po.Utilities;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,16 +12,16 @@ namespace po.Services
 {
     public sealed class MigrationService : IHostedService
     {
-        private readonly MigrationInitCompletionSignal signal;
+        private readonly Sentinals sentinals;
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger<MigrationService> logger;
 
         public MigrationService(
-            MigrationInitCompletionSignal signal,
+            Sentinals sentinals,
             IServiceProvider serviceProvider,
             ILogger<MigrationService> logger)
         {
-            this.signal = signal;
+            this.sentinals = sentinals;
             this.serviceProvider = serviceProvider;
             this.logger = logger;
         }
@@ -35,7 +36,7 @@ namespace po.Services
             await poContext.Database.MigrateAsync(cancellationToken);
 
             this.logger.LogInformation("Migrations complete.");
-            this.signal.SignalCompletion();
+            this.sentinals.DBMigration.SignalCompletion();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
