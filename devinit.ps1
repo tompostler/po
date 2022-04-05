@@ -24,6 +24,12 @@ $localSettings = [PSCustomObject]@{
                 + (Get-AzKeyVaultSecret -VaultName tompostler -Name tompostler-sqladmin-password -AsPlainText) `
                 + ';');
     };
+    Storage = [PSCustomObject]@{
+        ConnectionString = (
+            'DefaultEndpointsProtocol=https;AccountName=potcpwtf;AccountKey=' `
+                + ((Get-AzStorageAccountKey -ResourceGroupName po-tcp-wtf -Name potcpwtf)[1].Value) `
+                + ';EndpointSuffix=core.windows.net');
+    };
 };
 $localSettingsPath = Join-Path ($PSScriptRoot) '.\src\po\appsettings.Development.json';
 # Create the item (including path!) if it doesn't exist

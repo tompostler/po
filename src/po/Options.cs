@@ -9,6 +9,7 @@ namespace po
         {
             services.Configure<Discord>(configuration.GetSection(nameof(Discord)));
             services.Configure<Sql>(configuration.GetSection(nameof(Sql)));
+            services.Configure<Storage>(configuration.GetSection(nameof(Storage)));
             return services;
         }
 

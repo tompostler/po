@@ -37,8 +37,7 @@
   "variables": {
     "sqlConnectionString": "[concat('Server=tcp:', parameters('sqlServerName'), environment().suffixes.sqlServerHostname, ',1433;Initial Catalog=', parameters('sqlDatabaseName'), ';Persist Security Info=False;User ID=', parameters('sqlAdminUsername'), ';Password=', parameters('sqlAdminPassword'), ';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]",
     "storageAccountName": "[replace(parameters('siteName'), '-', '')]",
-    "storageAccountId": "[resourceId(parameters('siteName'), 'Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-    "storageAccountConnectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountId'), '2019-06-01').keys[0].value, ';EndpointSuffix=', environment().suffixes.storage)]"
+    "storageAccountId": "[resourceId(parameters('siteName'), 'Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
   },
   "resources": [
     {
@@ -51,7 +50,7 @@
         "Discord__BotNotificationChannelId": "[parameters('discordBotNotificationChannelId')]",
         "Discord__BotToken": "[parameters('discordBotToken')]",
         "Sql__ConnectionString": "[variables('sqlConnectionString')]",
-        "Storage__ConnectionString": "[variables('storageAccountConnectionString')]",
+        "Storage__ConnectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountId'), '2019-06-01').keys[0].value, ';EndpointSuffix=', environment().suffixes.storage)]",
         "WEBSITE_RUN_FROM_PACKAGE": "1"
       }
     }
