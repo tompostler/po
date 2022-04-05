@@ -22,5 +22,9 @@ namespace po
         {
             public string ConnectionString { get; set; }
         }
+        public sealed class Storage
+        {
+            public string ConnectionString { get; set; }
+        }
     }
 }
