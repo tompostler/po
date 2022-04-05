@@ -1,4 +1,5 @@
 ﻿using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -6,6 +7,8 @@ using Microsoft.Extensions.Options;
 using po.DataAccess;
 using po.Utilities;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -81,13 +84,15 @@ namespace po.Services
                 return Task.CompletedTask;
             }
 
+            // If we want to actually do something based on messages received, that would go here
             return Task.CompletedTask;
         }
 
         private async Task DiscordClientReady(CancellationToken cancellationToken)
         {
             await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
-            await this.TrySendStartupMessageAsync();
+            //await this.RegisterSlashCommandsAsync(cancellationToken);
+            await this.TrySendNotificationTextMessageAsync($"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}");
 
             this.discordClient.Ready -= () => this.DiscordClientReady(cancellationToken);
         }
@@ -97,22 +102,48 @@ namespace po.Services
             await this.sentinals.DBMigration.WaitForCompletionAsync(cancellationToken);
             this.logger.LogInformation("Migration completion signal received. Starting data sync.");
 
-            using IServiceScope scope = this.serviceProvider.CreateScope();
-            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+            IEnumerable<SocketTextChannel> allTextChannels = this.discordClient.Guilds.SelectMany(g => g.TextChannels);
+
+            // Remove slash command registrations for any channels that no longer exist
+            using (IServiceScope scope = this.serviceProvider.CreateScope())
+            using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
+            {
+                List<Models.SlashCommand> allSlashCommands = await poContext.SlashCommands.Include(sc => sc.EnabledChannels).ToListAsync(cancellationToken);
+                foreach (Models.SlashCommand slashCommand in allSlashCommands)
+                {
+                    List<Models.SlashCommandChannel> channelsToKeep = new();
+                    foreach (Models.SlashCommandChannel slashCommandChannel in slashCommand.EnabledChannels ?? Enumerable.Empty<Models.SlashCommandChannel>())
+                    {
+                        if (allTextChannels.Any(tc => slashCommandChannel.GuildId == tc.Guild.Id && slashCommandChannel.ChannelId == tc.Id))
+                        {
+                            channelsToKeep.Add(slashCommandChannel);
+                        }
+                        else
+                        {
+                            await this.TrySendNotificationTextMessageAsync($"Removed {slashCommandChannel}");
+                        }
+                    }
+                    slashCommand.EnabledChannels = channelsToKeep;
+                }
+                _ = await poContext.SaveChangesAsync(cancellationToken);
+            }
         }
 
-        private async Task TrySendStartupMessageAsync()
+        //private Task RegisterSlashCommandsAsync(CancellationToken cancellationToken)
+        //{
+        //    return Task.CompletedTask;
+        //}
+
+        private async Task TrySendNotificationTextMessageAsync(string message)
         {
-            this.logger.LogInformation($"Attempting to send startup message to {this.options.BotPrimaryGuildId}/{this.options.BotNotificationChannelId}");
+            this.logger.LogInformation($"Attempting to send notification message to {this.options.BotPrimaryGuildId}/{this.options.BotNotificationChannelId}");
             try
             {
-                SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
-                SocketTextChannel notificationTextChannel = primaryGuild.GetTextChannel(this.options.BotNotificationChannelId);
-                _ = await notificationTextChannel.SendMessageAsync($"I have been restarted. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}");
+                _ = await this.discordClient.GetGuild(this.options.BotPrimaryGuildId).GetTextChannel(this.options.BotNotificationChannelId).SendMessageAsync(message);
             }
             catch (Exception ex)
             {
-                this.logger.LogError($"Could not send startup message: {ex}");
+                this.logger.LogError($"Could not send notification message: {ex}");
             }
         }
 
