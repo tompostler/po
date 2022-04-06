@@ -1,4 +1,5 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -47,7 +48,29 @@ namespace po.Services
             await this.discordClient.LoginAsync(Discord.TokenType.Bot, botToken);
             await this.discordClient.StartAsync();
 
-            this.discordClient.Ready += () => this.DiscordClientReady(cancellationToken);
+            this.discordClient.Ready += () => this.DiscordClient_Ready(cancellationToken);
+            this.discordClient.SlashCommandExecuted += this.DiscordClient_SlashCommandExecuted;
+        }
+
+        private async Task DiscordClient_SlashCommandExecuted(SocketSlashCommand arg)
+        {
+            Models.SlashCommand command;
+            using (IServiceScope scope = this.serviceProvider.CreateScope())
+            using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
+            {
+                command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == arg.CommandName);
+            }
+            if (command == default)
+            {
+                await arg.RespondAsync($"`{arg.CommandName}` is not registered for handling.");
+            }
+
+            switch (arg.CommandName)
+            {
+                default:
+                    await arg.RespondAsync($"Command `{arg.CommandName}` ({arg.CommandId}) is registered but not mapped to handling.");
+                    break;
+            }
         }
 
         private Task DiscordClientLog(Discord.LogMessage arg)
@@ -88,13 +111,13 @@ namespace po.Services
             return Task.CompletedTask;
         }
 
-        private async Task DiscordClientReady(CancellationToken cancellationToken)
+        private async Task DiscordClient_Ready(CancellationToken cancellationToken)
         {
             await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
-            //await this.RegisterSlashCommandsAsync(cancellationToken);
+            await this.RegisterSlashCommandsAsync(cancellationToken);
             await this.TrySendNotificationTextMessageAsync($"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}");
 
-            this.discordClient.Ready -= () => this.DiscordClientReady(cancellationToken);
+            this.discordClient.Ready -= () => this.DiscordClient_Ready(cancellationToken);
         }
 
         private async Task EnsureDataModelIsUpToDateAsync(CancellationToken cancellationToken)
@@ -129,10 +152,44 @@ namespace po.Services
             }
         }
 
-        //private Task RegisterSlashCommandsAsync(CancellationToken cancellationToken)
-        //{
-        //    return Task.CompletedTask;
-        //}
+        private async Task RegisterSlashCommandsAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
+
+                SlashCommandBuilder builder = new()
+                {
+                    Name = "echo",
+                    Description = "Returns what you said back to you."
+                };
+                Models.SlashCommand command;
+                using (IServiceScope scope = this.serviceProvider.CreateScope())
+                using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
+                {
+                    command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == builder.Name, cancellationToken);
+                    command ??= new()
+                    {
+                        Name = builder.Name,
+                        IsGuildLevel = true
+                    };
+                    if (!command.SuccessfullyRegistered.HasValue)
+                    {
+                        SocketApplicationCommand response = command.IsGuildLevel
+                            ? await primaryGuild.CreateApplicationCommandAsync(builder.Build())
+                            : await this.discordClient.CreateGlobalApplicationCommandAsync(builder.Build());
+                        this.logger.LogInformation($"Registered command {response.Name} ({response.Id}). IsGuildLevel={command.IsGuildLevel}");
+
+                        command.SuccessfullyRegistered = DateTimeOffset.UtcNow;
+                        _ = await poContext.SaveChangesAsync(cancellationToken);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex, "Could not register a command.");
+            }
+        }
 
         private async Task TrySendNotificationTextMessageAsync(string message)
         {
