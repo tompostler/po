@@ -168,11 +168,15 @@ namespace po.Services
                 using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                 {
                     command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == builder.Name, cancellationToken);
-                    command ??= new()
+                    if (command == default)
                     {
-                        Name = builder.Name,
-                        IsGuildLevel = true
-                    };
+                        command = new()
+                        {
+                            Name = builder.Name,
+                            IsGuildLevel = true
+                        };
+                        _ = poContext.SlashCommands.Add(command);
+                    }
                     if (!command.SuccessfullyRegistered.HasValue)
                     {
                         SocketApplicationCommand response = command.IsGuildLevel
