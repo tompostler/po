@@ -98,6 +98,7 @@ namespace po.Services
             await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
             await this.RegisterSlashCommandsAsync(cancellationToken);
             await this.TrySendNotificationTextMessageAsync($"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}");
+            this.sentinals.DiscordClient.SignalCompletion(this.discordClient);
 
             this.discordClient.Ready -= () => this.DiscordClient_Ready(cancellationToken);
         }
@@ -192,7 +193,7 @@ namespace po.Services
                 using (IServiceScope scope = this.serviceProvider.CreateScope())
                 using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                 {
-                    command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == payload.CommandName);
+                    command = await poContext.SlashCommands.Include(x => x.EnabledChannels).FirstOrDefaultAsync(sc => sc.Name == payload.CommandName);
                 }
                 if (command == default)
                 {
@@ -215,6 +216,17 @@ namespace po.Services
             catch (Exception ex)
             {
                 this.logger.LogError(ex, "Could not handle slash command.");
+                try
+                {
+                    if (!payload.HasResponded)
+                    {
+                        await payload.RespondAsync($"Caught an exception: {ex}");
+                    }
+                }
+                catch (Exception nestedEx)
+                {
+                    this.logger.LogError(nestedEx, "Could not respond again after initial exception.");
+                }
             }
         }
 
