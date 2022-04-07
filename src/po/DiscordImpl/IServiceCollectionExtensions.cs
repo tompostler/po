@@ -9,6 +9,7 @@ namespace po.DiscordImpl
             return services
                 .AddSingleton<SlashCommands.SlashCommandBase, SlashCommands.CommandList>()
                 .AddSingleton<SlashCommands.SlashCommandBase, SlashCommands.Echo>()
+                .AddSingleton<SlashCommands.SlashCommandBase, SlashCommands.NukeMessages>()
                 ;
         }
     }

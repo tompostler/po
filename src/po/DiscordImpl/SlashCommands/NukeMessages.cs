@@ -18,9 +18,9 @@ namespace po.DiscordImpl.SlashCommands
 
         public override SlashCommandProperties BuiltCommand => new SlashCommandBuilder()
             .WithName(this.ExpectedCommand.Name)
-            .WithDescription("Removes all messages from the channel. Note: this command requires enablement")
+            .WithDescription("Removes all messages from the channel. Note: this command requires enablement.")
             .Build();
 
-        public override async Task HandleCommandAsync(SocketSlashCommand payload) => throw new NotImplementedException();
+        public override Task HandleCommandAsync(SocketSlashCommand payload) => throw new NotImplementedException();
     }
 }
