@@ -12,6 +12,9 @@ namespace po.Models
 
         public int Version { get; set; }
 
+        // Set by discord, not the id we want to use in our data model
+        public ulong Id { get; set; }
+
         public bool IsGuildLevel { get; set; }
 
         public DateTimeOffset? SuccessfullyRegistered { get; set; }

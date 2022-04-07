@@ -195,6 +195,7 @@ namespace po.Services
                             : await this.discordClient.CreateGlobalApplicationCommandAsync(builder.Build());
                         this.logger.LogInformation($"Registered command {response.Name} ({response.Id}). IsGuildLevel={command.IsGuildLevel}");
 
+                        command.Id = response.Id;
                         command.SuccessfullyRegistered = DateTimeOffset.UtcNow;
                         _ = await poContext.SaveChangesAsync(cancellationToken);
                     }
