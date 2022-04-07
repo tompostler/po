@@ -10,6 +10,8 @@ namespace po.Models
         [MaxLength(32)]
         public string Name { get; set; }
 
+        public int Version { get; set; }
+
         public bool IsGuildLevel { get; set; }
 
         public DateTimeOffset? SuccessfullyRegistered { get; set; }

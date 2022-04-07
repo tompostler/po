@@ -45,7 +45,7 @@ namespace po.Services
             string botToken = this.options.BotToken;
             this.logger.LogInformation($"Token is {botToken?.Length.ToString() ?? "<null>"} characters.");
 
-            await this.discordClient.LoginAsync(Discord.TokenType.Bot, botToken);
+            await this.discordClient.LoginAsync(TokenType.Bot, botToken);
             await this.discordClient.StartAsync();
 
             this.discordClient.Ready += () => this.DiscordClient_Ready(cancellationToken);
@@ -54,6 +54,8 @@ namespace po.Services
 
         private async Task DiscordClient_SlashCommandExecuted(SocketSlashCommand arg)
         {
+            try
+            {
             Models.SlashCommand command;
             using (IServiceScope scope = this.serviceProvider.CreateScope())
             using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
@@ -67,22 +69,31 @@ namespace po.Services
 
             switch (arg.CommandName)
             {
+                case "echo":
+                    await arg.RespondAsync(arg.Data.Options.FirstOrDefault()?.Value as string ?? "You apparently have nothing for me to say");
+                    break;
+
                 default:
                     await arg.RespondAsync($"Command `{arg.CommandName}` ({arg.CommandId}) is registered but not mapped to handling.");
                     break;
+                }
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex, "Could not handle slash command.");
             }
         }
 
-        private Task DiscordClientLog(Discord.LogMessage arg)
+        private Task DiscordClientLog(LogMessage arg)
         {
             LogLevel logLevel = arg.Severity switch
             {
-                Discord.LogSeverity.Critical => LogLevel.Critical,
-                Discord.LogSeverity.Error => LogLevel.Error,
-                Discord.LogSeverity.Warning => LogLevel.Warning,
-                Discord.LogSeverity.Info => LogLevel.Information,
-                Discord.LogSeverity.Verbose => LogLevel.Trace,
-                Discord.LogSeverity.Debug => LogLevel.Debug,
+                LogSeverity.Critical => LogLevel.Critical,
+                LogSeverity.Error => LogLevel.Error,
+                LogSeverity.Warning => LogLevel.Warning,
+                LogSeverity.Info => LogLevel.Information,
+                LogSeverity.Verbose => LogLevel.Trace,
+                LogSeverity.Debug => LogLevel.Debug,
                 _ => LogLevel.Information
             };
 
@@ -158,26 +169,26 @@ namespace po.Services
             {
                 SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
 
-                SlashCommandBuilder builder = new()
-                {
-                    Name = "echo",
-                    Description = "Returns what you said back to you."
-                };
-                Models.SlashCommand command;
+                SlashCommandBuilder builder = new SlashCommandBuilder()
+                    .WithName("echo")
+                    .WithDescription("Returns what you said back to you.")
+                    .AddOption("text", ApplicationCommandOptionType.String, "The text to echo back.");
                 using (IServiceScope scope = this.serviceProvider.CreateScope())
                 using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                 {
-                    command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == builder.Name, cancellationToken);
+                    Models.SlashCommand command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == builder.Name, cancellationToken);
+                    Models.SlashCommand expectedCommand = new()
+                    {
+                        Name = builder.Name,
+                        Version = 1,
+                        IsGuildLevel = true
+                    };
                     if (command == default)
                     {
-                        command = new()
-                        {
-                            Name = builder.Name,
-                            IsGuildLevel = true
-                        };
+                        command = expectedCommand;
                         _ = poContext.SlashCommands.Add(command);
                     }
-                    if (!command.SuccessfullyRegistered.HasValue)
+                    if (!command.SuccessfullyRegistered.HasValue || command.Version != expectedCommand.Version)
                     {
                         SocketApplicationCommand response = command.IsGuildLevel
                             ? await primaryGuild.CreateApplicationCommandAsync(builder.Build())
