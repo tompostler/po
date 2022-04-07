@@ -19,6 +19,7 @@ namespace po.Services
     {
         private readonly IServiceProvider serviceProvider;
         private readonly Sentinals sentinals;
+        private readonly Dictionary<string, DiscordImpl.SlashCommands.SlashCommandBase> slashCommands;
         private readonly Options.Discord options;
         private readonly ILogger<BotService> logger;
 
@@ -27,11 +28,13 @@ namespace po.Services
         public BotService(
             IServiceProvider serviceProvider,
             Sentinals sentinals,
+            IEnumerable<DiscordImpl.SlashCommands.SlashCommandBase> slashCommands,
             IOptions<Options.Discord> options,
             ILogger<BotService> logger)
         {
             this.serviceProvider = serviceProvider;
             this.sentinals = sentinals;
+            this.slashCommands = slashCommands.ToDictionary(x => x.ExpectedCommand.Name);
             this.options = options.Value;
             this.logger = logger;
         }
@@ -50,38 +53,6 @@ namespace po.Services
 
             this.discordClient.Ready += () => this.DiscordClient_Ready(cancellationToken);
             this.discordClient.SlashCommandExecuted += this.DiscordClient_SlashCommandExecuted;
-        }
-
-        private async Task DiscordClient_SlashCommandExecuted(SocketSlashCommand arg)
-        {
-            try
-            {
-            Models.SlashCommand command;
-            using (IServiceScope scope = this.serviceProvider.CreateScope())
-            using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
-            {
-                command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == arg.CommandName);
-            }
-            if (command == default)
-            {
-                await arg.RespondAsync($"`{arg.CommandName}` is not registered for handling.");
-            }
-
-            switch (arg.CommandName)
-            {
-                case "echo":
-                    await arg.RespondAsync(arg.Data.Options.FirstOrDefault()?.Value as string ?? "You apparently have nothing for me to say");
-                    break;
-
-                default:
-                    await arg.RespondAsync($"Command `{arg.CommandName}` ({arg.CommandId}) is registered but not mapped to handling.");
-                    break;
-                }
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex, "Could not handle slash command.");
-            }
         }
 
         private Task DiscordClientLog(LogMessage arg)
@@ -165,45 +136,38 @@ namespace po.Services
 
         private async Task RegisterSlashCommandsAsync(CancellationToken cancellationToken)
         {
-            try
+            SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
+
+            foreach (DiscordImpl.SlashCommands.SlashCommandBase slashCommand in this.slashCommands.Values)
             {
-                SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
-
-                SlashCommandBuilder builder = new SlashCommandBuilder()
-                    .WithName("echo")
-                    .WithDescription("Returns what you said back to you.")
-                    .AddOption("text", ApplicationCommandOptionType.String, "The text to echo back.");
-                using (IServiceScope scope = this.serviceProvider.CreateScope())
-                using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
+                try
                 {
-                    Models.SlashCommand command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == builder.Name, cancellationToken);
-                    Models.SlashCommand expectedCommand = new()
+                    using (IServiceScope scope = this.serviceProvider.CreateScope())
+                    using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                     {
-                        Name = builder.Name,
-                        Version = 1,
-                        IsGuildLevel = true
-                    };
-                    if (command == default)
-                    {
-                        command = expectedCommand;
-                        _ = poContext.SlashCommands.Add(command);
-                    }
-                    if (!command.SuccessfullyRegistered.HasValue || command.Version != expectedCommand.Version)
-                    {
-                        SocketApplicationCommand response = command.IsGuildLevel
-                            ? await primaryGuild.CreateApplicationCommandAsync(builder.Build())
-                            : await this.discordClient.CreateGlobalApplicationCommandAsync(builder.Build());
-                        this.logger.LogInformation($"Registered command {response.Name} ({response.Id}). IsGuildLevel={command.IsGuildLevel}");
+                        Models.SlashCommand command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == slashCommand.ExpectedCommand.Name, cancellationToken);
+                        if (command == default)
+                        {
+                            command = slashCommand.ExpectedCommand;
+                            _ = poContext.SlashCommands.Add(command);
+                        }
+                        if (!command.SuccessfullyRegistered.HasValue || command.Version != slashCommand.ExpectedCommand.Version)
+                        {
+                            SocketApplicationCommand response = command.IsGuildLevel
+                                ? await primaryGuild.CreateApplicationCommandAsync(slashCommand.BuiltCommand)
+                                : await this.discordClient.CreateGlobalApplicationCommandAsync(slashCommand.BuiltCommand);
+                            this.logger.LogInformation($"Registered command {response.Name} ({response.Id}). IsGuildLevel={command.IsGuildLevel}");
 
-                        command.Id = response.Id;
-                        command.SuccessfullyRegistered = DateTimeOffset.UtcNow;
-                        _ = await poContext.SaveChangesAsync(cancellationToken);
+                            command.Id = response.Id;
+                            command.SuccessfullyRegistered = DateTimeOffset.UtcNow;
+                            _ = await poContext.SaveChangesAsync(cancellationToken);
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogError(ex, "Could not register a command.");
+                catch (Exception ex)
+                {
+                    this.logger.LogError(ex, "Could not register a command.");
+                }
             }
         }
 
@@ -217,6 +181,40 @@ namespace po.Services
             catch (Exception ex)
             {
                 this.logger.LogError($"Could not send notification message: {ex}");
+            }
+        }
+
+        private async Task DiscordClient_SlashCommandExecuted(SocketSlashCommand payload)
+        {
+            try
+            {
+                Models.SlashCommand command;
+                using (IServiceScope scope = this.serviceProvider.CreateScope())
+                using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
+                {
+                    command = await poContext.SlashCommands.FirstOrDefaultAsync(sc => sc.Name == payload.CommandName);
+                }
+                if (command == default)
+                {
+                    await payload.RespondAsync($"`{payload.CommandName}` is not registered for handling.");
+                }
+                else if (command.RequiresChannelEnablement && !command.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id))
+                {
+                    await payload.RespondAsync($"`{payload.CommandName}` is enabled for the current channel.");
+                }
+
+                if (this.slashCommands.ContainsKey(payload.CommandName))
+                {
+                    await this.slashCommands[payload.CommandName].HandleCommandAsync(payload);
+                }
+                else
+                {
+                    await payload.RespondAsync($"Command `{payload.CommandName}` ({payload.CommandId}) is registered but not mapped to handling.");
+                }
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError(ex, "Could not handle slash command.");
             }
         }
 
