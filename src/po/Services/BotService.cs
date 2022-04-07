@@ -201,7 +201,7 @@ namespace po.Services
                 }
                 else if (command.RequiresChannelEnablement && !command.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id))
                 {
-                    await payload.RespondAsync($"`{payload.CommandName}` is enabled for the current channel.");
+                    await payload.RespondAsync($"`{payload.CommandName}` is not enabled for the current channel.");
                 }
 
                 if (this.slashCommands.ContainsKey(payload.CommandName))

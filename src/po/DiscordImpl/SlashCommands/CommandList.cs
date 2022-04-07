@@ -79,12 +79,12 @@ namespace po.DiscordImpl.SlashCommands
                 {
                     commandsRequiringEnablement = await poContext.SlashCommands.Where(x => x.RequiresChannelEnablement).Include(x => x.EnabledChannels).ToListAsync();
                 }
-                StringBuilder response = new StringBuilder()
-                    .AppendLine("Enabled commands:")
-                    .AppendJoin(", ", commandsRequiringEnablement.Where(c => c.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id)))
-                    .AppendLine()
-                    .AppendLine("Disabled commands:")
-                    .AppendJoin(", ", commandsRequiringEnablement.Where(c => !c.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id)));
+                StringBuilder response = new();
+                _ = response.AppendLine("Enabled commands:");
+                _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => c.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id)).Select(x => x.Name)));
+                _ = response.AppendLine();
+                _ = response.AppendLine("Disabled commands:");
+                _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => !c.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id)).Select(x => x.Name)));
                 await payload.RespondAsync(response.ToString());
                 return;
             }
