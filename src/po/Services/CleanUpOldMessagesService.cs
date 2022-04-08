@@ -52,7 +52,7 @@ namespace po.Services
                         await channel.DeleteMessageAsync(message, cancellationToken.ToRO());
                     }
                 }
-                _ = await channel.SendMessageAsync($"Purged all messages in channel older than {dayAgo:u}.", options: cancellationToken.ToRO());
+                _ = await channel.SendMessageAsync($"Background service: Purged all messages in channel older than {dayAgo:u}.", options: cancellationToken.ToRO());
             }
         }
     }

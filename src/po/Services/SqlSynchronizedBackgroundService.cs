@@ -48,7 +48,11 @@ namespace po.Services
                     }
 
                     // Record that we've just started another loop
-                    lastExecution ??= new Models.SynchronizedBackgroundService { Name = this.GetType().FullName };
+                    if (lastExecution == default)
+                    {
+                        lastExecution = new Models.SynchronizedBackgroundService { Name = this.GetType().FullName };
+                        _ = poContext.SynchronizedBackgroundServices.Add(lastExecution);
+                    }
                     lastExecution.LastExecuted = DateTimeOffset.UtcNow;
                     lastExecution.CountExecutions++;
                     _ = await poContext.SaveChangesAsync(stoppingToken);
