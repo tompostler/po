@@ -7,7 +7,6 @@ using po.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,10 +25,18 @@ namespace po.DiscordImpl.SlashCommands
             this.serviceProvider = serviceProvider;
         }
 
+        // Since the command has to be updated every time a new one is added to the list, just maintain it manually here
+        // Don't forget to increase the version below to force a re-registration
+        private readonly string[] commandNames = new[]
+        {
+            "nuke-messages",
+            "nuke-messages-older-than-day"
+        };
+
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "commandlist",
-            Version = 1,
+            Version = 2,
             IsGuildLevel = true
         };
 
@@ -45,7 +52,7 @@ namespace po.DiscordImpl.SlashCommands
                     .WithDescription("The name of the command to enable for this channel.")
                     .WithType(ApplicationCommandOptionType.String)
                     .WithRequired(true)
-                    .AddCommandChoices()
+                    .AddCommandChoices(this.commandNames)
                 )
             )
             .AddOption(new SlashCommandOptionBuilder()
@@ -57,7 +64,7 @@ namespace po.DiscordImpl.SlashCommands
                     .WithDescription("The name of the command to disable for this channel.")
                     .WithType(ApplicationCommandOptionType.String)
                     .WithRequired(true)
-                    .AddCommandChoices()
+                    .AddCommandChoices(this.commandNames)
                 )
             )
             .AddOption(new SlashCommandOptionBuilder()
@@ -121,24 +128,8 @@ namespace po.DiscordImpl.SlashCommands
 
     public static class CommandsRequiringEnablement
     {
-        private static List<string> commandNames;
-
-        public static SlashCommandOptionBuilder AddCommandChoices(this SlashCommandOptionBuilder @this)
+        public static SlashCommandOptionBuilder AddCommandChoices(this SlashCommandOptionBuilder @this, string[] commandNames)
         {
-            if (commandNames == default)
-            {
-                // Gotta love reflection...
-                // Normally we'd just use the DI container to get all the types, but unsurpringly it does not work well when you need an enumerable containing yourself at construction time
-                Type baseType = typeof(SlashCommandBase);
-                commandNames = Assembly.GetExecutingAssembly()
-                    .GetTypes()
-                    .Where(t => t != baseType && baseType.IsAssignableFrom(t))
-                    .Select(t => (SlashCommandBase)Activator.CreateInstance(t))
-                    .Where(t => t.ExpectedCommand.RequiresChannelEnablement)
-                    .Select(x => x.ExpectedCommand.Name)
-                    .ToList();
-            }
-
             foreach (string name in commandNames)
             {
                 _ = @this.AddChoice(name, name);

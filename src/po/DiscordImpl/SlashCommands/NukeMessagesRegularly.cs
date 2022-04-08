@@ -18,7 +18,7 @@ namespace po.DiscordImpl.SlashCommands
 
         public override SlashCommandProperties BuiltCommand => new SlashCommandBuilder()
             .WithName(this.ExpectedCommand.Name)
-            .WithDescription("Removes all messages from the channel older than a day. Enabling this command for a channel also does this periodically in addition to immediately.")
+            .WithDescription("Removes all messages from the channel older than a day periodically. Note: requires enablement.")
             .Build();
 
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
