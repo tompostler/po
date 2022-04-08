@@ -45,14 +45,16 @@ namespace po.Services
 
                 this.logger.LogInformation($"Deleting messages older than a day in {channel.Id}");
                 DateTimeOffset dayAgo = DateTimeOffset.UtcNow.AddDays(-1);
+                uint count = 0;
                 foreach (IMessage message in await channel.GetMessagesAsync(options: cancellationToken.ToRO()).FlattenAsync())
                 {
                     if (message.Timestamp < dayAgo)
                     {
                         await channel.DeleteMessageAsync(message, cancellationToken.ToRO());
+                        count++;
                     }
                 }
-                _ = await channel.SendMessageAsync($"Background service: Purged all messages in channel older than {dayAgo:u}.", options: cancellationToken.ToRO());
+                _ = await channel.SendMessageAsync($"Background service: Purged {count} messages in channel older than {dayAgo:u}.", options: cancellationToken.ToRO());
             }
         }
     }

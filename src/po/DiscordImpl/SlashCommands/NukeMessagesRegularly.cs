@@ -26,14 +26,16 @@ namespace po.DiscordImpl.SlashCommands
             DateTimeOffset dayAgo = DateTimeOffset.UtcNow.AddDays(-1);
             await payload.RespondAsync($"Starting purge of all messages in channel older than {dayAgo:u}.");
             IMessageChannel channel = await payload.GetChannelAsync();
+            uint count = 0;
             foreach (IMessage message in await channel.GetMessagesAsync().FlattenAsync())
             {
                 if (message.Timestamp < dayAgo)
                 {
                     await channel.DeleteMessageAsync(message);
+                    count++;
                 }
             }
-            _ = await channel.SendMessageAsync($"Purged all messages in channel older than {dayAgo:u}.");
+            _ = await channel.SendMessageAsync($"Purged {count} messages in channel older than {dayAgo:u}.");
         }
     }
 }
