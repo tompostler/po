@@ -22,55 +22,49 @@ namespace po
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMemoryCache(options =>
-            {
-                options.CompactionPercentage = .25;
-                options.SizeLimit = 1024;
-            });
-            services.AddControllers()
+            _ = services.AddControllers()
                 .AddJsonOptions(options =>
                     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
                 );
 
-            services.AddLogging(options => options.AddConsole());
-            services.AddApplicationInsightsTelemetry();
+            _ = services.AddLogging(options => options.AddConsole());
+            _ = services.AddApplicationInsightsTelemetry();
 
-            services.AddPoConfig(this.Configuration);
+            _ = services.AddPoConfig(this.Configuration);
 
-            services.AddDbContext<DataAccess.PoContext>((provider, options) => options
-                .UseSqlServer(
-                    provider.GetRequiredService<IOptions<Options.Sql>>().Value.ConnectionString,
-                    sqloptions => sqloptions
-                        .EnableRetryOnFailure()));
+            _ = services.AddDbContext<DataAccess.PoContext>((provider, options) => options
+                  .UseSqlServer(
+                      provider.GetRequiredService<IOptions<Options.Sql>>().Value.ConnectionString,
+                      sqloptions => sqloptions
+                          .EnableRetryOnFailure()));
 
-            services.AddSingleton<Utilities.Sentinals>();
+            _ = services.AddSingleton<Utilities.Sentinals>();
 
-            services.AddHostedService<Services.MigrationService>();
-            services.AddHostedService<Services.BotService>();
+            _ = services.AddHostedService<Services.BotService>();
+            _ = services.AddHostedService<Services.CleanUpOldMessagesService>();
+            _ = services.AddHostedService<Services.MigrationService>();
 
-            services.AddDiscordBotSlashCommands();
+            _ = services.AddDiscordBotSlashCommands();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app)
         {
-            app.UseDeveloperExceptionPage();
-            app.UseHttpsRedirection();
-            app.UseRouting();
+            _ = app.UseDeveloperExceptionPage();
+            _ = app.UseHttpsRedirection();
+            _ = app.UseRouting();
 
-            app.UseMiddleware<Middleware.ExceptionToStatusCodeMiddleware>();
+            _ = app.UseMiddleware<Middleware.ExceptionToStatusCodeMiddleware>();
 
-            var assemblyFileVersion = FileVersionInfo.GetVersionInfo(typeof(Startup).Assembly.Location).ProductVersion;
-            app.Use(async (context, next) =>
-            {
-                context.Response.Headers.Add("po-tcp-wtf-server-version", assemblyFileVersion);
-                await next.Invoke();
-            });
+            string assemblyFileVersion = FileVersionInfo.GetVersionInfo(typeof(Startup).Assembly.Location).ProductVersion;
+            _ = app.Use(
+                async (context, next) =>
+                {
+                    context.Response.Headers.Add("po-tcp-wtf-server-version", assemblyFileVersion);
+                    await next.Invoke();
+                });
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            _ = app.UseEndpoints(endpoints => _ = endpoints.MapControllers());
         }
     }
 }

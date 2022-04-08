@@ -18,7 +18,7 @@ namespace po.Services
         public CleanUpOldMessagesService(
             IServiceProvider serviceProvider,
             Sentinals sentinals,
-            ILogger logger)
+            ILogger<CleanUpOldMessagesService> logger)
             : base(serviceProvider, sentinals, logger)
         { }
 
