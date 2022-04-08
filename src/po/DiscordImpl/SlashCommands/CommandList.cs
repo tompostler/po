@@ -70,9 +70,7 @@ namespace po.DiscordImpl.SlashCommands
 
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
-            await payload.RespondAsync($"{payload.Data.Name} {payload.Data.Options.ToJsonString()}");
-            return;
-            string operation = payload.Data.Options.First().Value as string;
+            string operation = payload.Data.Options.First().Name as string;
 
             if (operation == "list")
             {
