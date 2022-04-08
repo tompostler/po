@@ -10,6 +10,7 @@ namespace po.DataAccess
 
         public DbSet<SlashCommand> SlashCommands { get; set; }
         public DbSet<SlashCommandChannel> SlashCommandChannels { get; set; }
+        public DbSet<SynchronizedBackgroundService> SynchronizedBackgroundServices { get; set; }
 
         public PoContext(DbContextOptions<PoContext> dbContextOptions, ILoggerFactory loggerFactory)
             : base(dbContextOptions)
@@ -36,6 +37,9 @@ namespace po.DataAccess
             _ = modelBuilder.Entity<SlashCommandChannel>()
                 .Property(x => x.RegistrationDate)
                 .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+            _ = modelBuilder.Entity<SynchronizedBackgroundService>()
+                .HasKey(x => x.Name);
 
             base.OnModelCreating(modelBuilder);
         }

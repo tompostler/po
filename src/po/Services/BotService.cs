@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using po.DataAccess;
+using po.Extensions;
 using po.Utilities;
 using System;
 using System.Collections.Generic;
@@ -97,7 +98,7 @@ namespace po.Services
         {
             await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
             await this.RegisterSlashCommandsAsync(cancellationToken);
-            await this.TrySendNotificationTextMessageAsync($"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}");
+            await this.TrySendNotificationTextMessageAsync($"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}", cancellationToken);
             this.sentinals.DiscordClient.SignalCompletion(this.discordClient);
 
             this.discordClient.Ready -= () => this.DiscordClient_Ready(cancellationToken);
@@ -126,7 +127,7 @@ namespace po.Services
                         }
                         else
                         {
-                            await this.TrySendNotificationTextMessageAsync($"Removed {slashCommandChannel}");
+                            await this.TrySendNotificationTextMessageAsync($"Removed {slashCommandChannel}", cancellationToken);
                         }
                     }
                     slashCommand.EnabledChannels = channelsToKeep;
@@ -155,8 +156,8 @@ namespace po.Services
                         if (!command.SuccessfullyRegistered.HasValue || command.Version != slashCommand.ExpectedCommand.Version)
                         {
                             SocketApplicationCommand response = command.IsGuildLevel
-                                ? await primaryGuild.CreateApplicationCommandAsync(slashCommand.BuiltCommand)
-                                : await this.discordClient.CreateGlobalApplicationCommandAsync(slashCommand.BuiltCommand);
+                                ? await primaryGuild.CreateApplicationCommandAsync(slashCommand.BuiltCommand, cancellationToken.ToRO())
+                                : await this.discordClient.CreateGlobalApplicationCommandAsync(slashCommand.BuiltCommand, cancellationToken.ToRO());
                             this.logger.LogInformation($"Registered command {response.Name} ({response.Id}). IsGuildLevel={command.IsGuildLevel}");
 
                             command.Id = response.Id;
@@ -172,12 +173,12 @@ namespace po.Services
             }
         }
 
-        private async Task TrySendNotificationTextMessageAsync(string message)
+        private async Task TrySendNotificationTextMessageAsync(string message, CancellationToken cancellationToken)
         {
             this.logger.LogInformation($"Attempting to send notification message to {this.options.BotPrimaryGuildId}/{this.options.BotNotificationChannelId}");
             try
             {
-                _ = await this.discordClient.GetGuild(this.options.BotPrimaryGuildId).GetTextChannel(this.options.BotNotificationChannelId).SendMessageAsync(message);
+                _ = await this.discordClient.GetGuild(this.options.BotPrimaryGuildId).GetTextChannel(this.options.BotNotificationChannelId).SendMessageAsync(message, options: cancellationToken.ToRO());
             }
             catch (Exception ex)
             {
