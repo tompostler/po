@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using po.DataAccess;
+using po.Extensions;
 using po.Models;
 using System;
 using System.Collections.Generic;
@@ -69,6 +70,8 @@ namespace po.DiscordImpl.SlashCommands
 
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
+            await payload.RespondAsync($"{payload.Data.Name} {payload.Data.Options.ToJsonString()}");
+            return;
             string operation = payload.Data.Options.First().Value as string;
 
             if (operation == "list")
