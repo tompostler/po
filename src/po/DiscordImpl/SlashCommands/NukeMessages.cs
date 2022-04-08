@@ -1,7 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using po.Models;
-using System;
 using System.Threading.Tasks;
 
 namespace po.DiscordImpl.SlashCommands
@@ -21,6 +20,15 @@ namespace po.DiscordImpl.SlashCommands
             .WithDescription("Removes all messages from the channel. Note: this command requires enablement.")
             .Build();
 
-        public override Task HandleCommandAsync(SocketSlashCommand payload) => throw new NotImplementedException();
+        public override async Task HandleCommandAsync(SocketSlashCommand payload)
+        {
+            await payload.RespondAsync("Starting purge of all messages in channel.");
+            IMessageChannel channel = await payload.GetChannelAsync();
+            foreach (IMessage message in await channel.GetMessagesAsync().FlattenAsync())
+            {
+                await channel.DeleteMessageAsync(message);
+            }
+            _ = await channel.SendMessageAsync("Purged all messages in channel.");
+        }
     }
 }

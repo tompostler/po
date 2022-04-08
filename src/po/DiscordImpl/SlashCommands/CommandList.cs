@@ -3,7 +3,6 @@ using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using po.DataAccess;
-using po.Extensions;
 using po.Models;
 using System;
 using System.Collections.Generic;
@@ -70,7 +69,7 @@ namespace po.DiscordImpl.SlashCommands
 
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
-            string operation = payload.Data.Options.First().Name as string;
+            string operation = payload.Data.Options.First().Name;
 
             if (operation == "list")
             {
@@ -81,6 +80,7 @@ namespace po.DiscordImpl.SlashCommands
                     commandsRequiringEnablement = await poContext.SlashCommands.Where(x => x.RequiresChannelEnablement).Include(x => x.EnabledChannels).ToListAsync();
                 }
                 StringBuilder response = new();
+                _ = response.AppendLine();
                 _ = response.AppendLine("Enabled commands:");
                 _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => c.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id)).Select(x => x.Name)));
                 _ = response.AppendLine();
