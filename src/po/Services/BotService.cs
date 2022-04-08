@@ -120,7 +120,7 @@ namespace po.Services
                     List<Models.SlashCommandChannel> channelsToKeep = new();
                     foreach (Models.SlashCommandChannel slashCommandChannel in slashCommand.EnabledChannels ?? Enumerable.Empty<Models.SlashCommandChannel>())
                     {
-                        if (allTextChannels.Any(tc => slashCommandChannel.GuildId == tc.Guild.Id && slashCommandChannel.ChannelId == tc.Id))
+                        if (allTextChannels.Any(tc => slashCommandChannel.ChannelId == tc.Id))
                         {
                             channelsToKeep.Add(slashCommandChannel);
                         }

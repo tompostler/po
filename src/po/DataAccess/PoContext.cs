@@ -31,7 +31,7 @@ namespace po.DataAccess
                 .HasKey(x => x.Name);
 
             _ = modelBuilder.Entity<SlashCommandChannel>()
-                .HasKey(x => new { x.SlashCommandName, x.GuildId, x.ChannelId });
+                .HasKey(x => new { x.SlashCommandName, x.ChannelId });
 
             _ = modelBuilder.Entity<SlashCommandChannel>()
                 .Property(x => x.RegistrationDate)

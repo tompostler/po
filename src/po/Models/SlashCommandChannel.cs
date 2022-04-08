@@ -10,14 +10,11 @@ namespace po.Models
         public string SlashCommandName { get; set; }
 
         [Required]
-        public ulong GuildId { get; set; }
-
-        [Required]
         public ulong ChannelId { get; set; }
 
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTimeOffset RegistrationDate { get; set; }
 
-        public override string ToString() => $"{nameof(SlashCommandChannel)}: {this.SlashCommandName} in {this.GuildId}/{this.ChannelId}";
+        public override string ToString() => $"{nameof(SlashCommandChannel)}: {this.SlashCommandName} in {this.ChannelId}";
     }
 }
