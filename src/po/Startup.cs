@@ -32,6 +32,7 @@ namespace po
 
             _ = services.AddPoConfig(this.Configuration);
 
+            _ = services.AddSingleton<DataAccess.PoBlobs>();
             _ = services.AddDbContext<DataAccess.PoContext>((provider, options) => options
                   .UseSqlServer(
                       provider.GetRequiredService<IOptions<Options.Sql>>().Value.ConnectionString,
