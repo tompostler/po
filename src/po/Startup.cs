@@ -32,18 +32,20 @@ namespace po
 
             _ = services.AddPoConfig(this.Configuration);
 
-            _ = services.AddSingleton<DataAccess.PoBlobs>();
             _ = services.AddDbContext<DataAccess.PoContext>((provider, options) => options
                   .UseSqlServer(
                       provider.GetRequiredService<IOptions<Options.Sql>>().Value.ConnectionString,
                       sqloptions => sqloptions
                           .EnableRetryOnFailure()));
+            _ = services.AddSingleton<DataAccess.PoStorage>();
 
             _ = services.AddSingleton<Utilities.Sentinals>();
 
             _ = services.AddHostedService<Services.BotService>();
-            _ = services.AddHostedService<Services.CleanUpOldMessagesService>();
             _ = services.AddHostedService<Services.MigrationService>();
+            
+            _ = services.AddHostedService<Services.Background.CleanUpOldMessagesBackgroundService>();
+            _ = services.AddHostedService<Services.Background.SyncBlobMetadataBackgroundService>();
 
             _ = services.AddDiscordBotSlashCommands();
         }

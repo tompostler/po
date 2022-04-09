@@ -11,14 +11,14 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace po.Services
+namespace po.Services.Background
 {
-    public sealed class CleanUpOldMessagesService : SqlSynchronizedBackgroundService
+    public sealed class CleanUpOldMessagesBackgroundService : SqlSynchronizedBackgroundService
     {
-        public CleanUpOldMessagesService(
+        public CleanUpOldMessagesBackgroundService(
             IServiceProvider serviceProvider,
             Sentinals sentinals,
-            ILogger<CleanUpOldMessagesService> logger)
+            ILogger<CleanUpOldMessagesBackgroundService> logger)
             : base(serviceProvider, sentinals, logger)
         { }
 

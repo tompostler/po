@@ -8,7 +8,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace po.Services
+namespace po.Services.Background
 {
     public abstract class SqlSynchronizedBackgroundService : BackgroundService
     {

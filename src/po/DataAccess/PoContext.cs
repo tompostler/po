@@ -8,6 +8,7 @@ namespace po.DataAccess
     {
         private readonly ILoggerFactory loggerFactory;
 
+        public DbSet<PoBlob> Blobs { get; set; }
         public DbSet<SlashCommand> SlashCommands { get; set; }
         public DbSet<SlashCommandChannel> SlashCommandChannels { get; set; }
         public DbSet<SynchronizedBackgroundService> SynchronizedBackgroundServices { get; set; }
@@ -28,6 +29,9 @@ namespace po.DataAccess
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            _ = modelBuilder.Entity<PoBlob>()
+                .HasKey(x => new { x.AccountName, x.ContainerName, x.Name });
+
             _ = modelBuilder.Entity<SlashCommand>()
                 .HasKey(x => x.Name);
 
