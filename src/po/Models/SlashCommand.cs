@@ -22,5 +22,12 @@ namespace po.Models
         public bool RequiresChannelEnablement { get; set; }
 
         public IList<SlashCommandChannel> EnabledChannels { get; set; }
+
+        public void UpdateBasics(SlashCommand other)
+        {
+            this.Version = other.Version;
+            this.IsGuildLevel = other.IsGuildLevel;
+            this.RequiresChannelEnablement = other.RequiresChannelEnablement;
+        }
     }
 }

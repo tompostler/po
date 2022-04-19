@@ -136,6 +136,9 @@ namespace po.Services
             }
         }
 
+        /// <remarks>
+        /// Note: Does not currently know how to de-register a command or change from guild to global level.
+        /// </remarks>
         private async Task RegisterSlashCommandsAsync(CancellationToken cancellationToken)
         {
             SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
@@ -153,6 +156,7 @@ namespace po.Services
                             command = slashCommand.ExpectedCommand;
                             _ = poContext.SlashCommands.Add(command);
                         }
+                        command.UpdateBasics(slashCommand.ExpectedCommand);
                         if (!command.SuccessfullyRegistered.HasValue || command.Version != slashCommand.ExpectedCommand.Version)
                         {
                             SocketApplicationCommand response = command.IsGuildLevel

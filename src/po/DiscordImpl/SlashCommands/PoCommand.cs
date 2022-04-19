@@ -27,7 +27,7 @@ namespace po.DiscordImpl.SlashCommands
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "po",
-            Version = 5,
+            Version = 2,
             IsGuildLevel = true,
             RequiresChannelEnablement = true
         };
