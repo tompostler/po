@@ -156,7 +156,6 @@ namespace po.Services
                             command = slashCommand.ExpectedCommand;
                             _ = poContext.SlashCommands.Add(command);
                         }
-                        command.UpdateBasics(slashCommand.ExpectedCommand);
                         if (!command.SuccessfullyRegistered.HasValue || command.Version != slashCommand.ExpectedCommand.Version)
                         {
                             SocketApplicationCommand response = command.IsGuildLevel
@@ -164,6 +163,7 @@ namespace po.Services
                                 : await this.discordClient.CreateGlobalApplicationCommandAsync(slashCommand.BuiltCommand, cancellationToken.ToRO());
                             this.logger.LogInformation($"Registered command {response.Name} ({response.Id}). IsGuildLevel={command.IsGuildLevel}");
 
+                            command.UpdateBasics(slashCommand.ExpectedCommand);
                             command.Id = response.Id;
                             command.SuccessfullyRegistered = DateTimeOffset.UtcNow;
                             _ = await poContext.SaveChangesAsync(cancellationToken);
