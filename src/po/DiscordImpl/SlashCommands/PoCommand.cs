@@ -145,7 +145,7 @@ namespace po.DiscordImpl.SlashCommands
                 int catLen = Math.Max("category".Length, statuses.Max(x => x.Key.Length));
                 int numLen = "percent viewed".Length;
                 _ = response.AppendLine("```");
-                _ = response.AppendLine($"{"CATEGORY".PadRight(catLen)}  {"SEEN".PadLeft(numLen)}  {"UNSEEN".PadLeft(numLen)}  {"TOTAL".PadLeft(numLen)}  {"SEEN".PadLeft(numLen)}  {"PERCENT VIEWED".PadLeft(numLen)}");
+                _ = response.AppendLine($"{"CATEGORY".PadRight(catLen)}  {"SEEN".PadLeft(numLen)}  {"UNSEEN".PadLeft(numLen)}  {"TOTAL".PadLeft(numLen)}  {"PERCENT VIEWED".PadLeft(numLen)}");
                 foreach (var status in statuses)
                 {
                     _ = response.Append(status.Key.PadRight(catLen));
