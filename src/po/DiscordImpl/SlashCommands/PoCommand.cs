@@ -169,7 +169,7 @@ namespace po.DiscordImpl.SlashCommands
                 _ = response.Append(ovetot.ToString().PadLeft(numLen));
                 _ = response.Append("  ");
                 _ = response.Append((1d * statuses.Sum(x => x.CountSeen) / ovetot).ToString("P2").PadLeft(numLen));
-                _ = response.AppendLine();
+                _ = response.AppendLine("```");
                 await payload.RespondAsync(response.ToString());
                 return;
             }
