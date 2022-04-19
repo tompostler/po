@@ -53,7 +53,7 @@ namespace po.Services.Background
                         count++;
                     }
                 }
-                if (count > 0)
+                if (count > 1)
                 {
                     _ = await channel.SendMessageAsync($"Background service: Purged {count} messages in channel older than {dayAgo:u}.", options: cancellationToken.ToRO());
                 }
