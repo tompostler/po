@@ -109,7 +109,7 @@ namespace po.DiscordImpl.SlashCommands
             {
                 if (string.IsNullOrWhiteSpace(command.RegistrationData))
                 {
-                    await payload.RespondAsync($"This channel is already not associated with any containers");
+                    await payload.RespondAsync("This channel is already not associated with any containers.");
                 }
                 else
                 {
@@ -118,6 +118,11 @@ namespace po.DiscordImpl.SlashCommands
                     _ = await poContext.SaveChangesAsync();
                     await payload.RespondAsync($"Channel successfully disassociated with container `{oldContainerName}`.");
                 }
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(command.RegistrationData))
+            {
+                await payload.RespondAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po associate <container-name>`.");
                 return;
             }
 
