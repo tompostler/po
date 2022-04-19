@@ -16,10 +16,6 @@ namespace po.DiscordImpl.SlashCommands
     {
         private readonly IServiceProvider serviceProvider;
 
-        // To support the CommandList, a parameterless constructor must be provided
-        public CommandList() { }
-
-        [ActivatorUtilitiesConstructor]
         public CommandList(IServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;

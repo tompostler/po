@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace po.DataAccess
 {
@@ -53,5 +54,8 @@ namespace po.DataAccess
             }
             this.logger.LogInformation($"Enumerated {countTotalBlobs} blobs in {countContainers} in {this.blobServiceClient.Uri}");
         }
+
+        public async Task<bool> ContainerExistsAsync(string containerName)
+            => await this.blobServiceClient.GetBlobContainerClient(containerName).ExistsAsync();
     }
 }
