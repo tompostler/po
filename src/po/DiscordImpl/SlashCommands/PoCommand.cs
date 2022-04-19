@@ -27,8 +27,9 @@ namespace po.DiscordImpl.SlashCommands
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "po",
-            Version = 1,
-            IsGuildLevel = true
+            Version = 2,
+            IsGuildLevel = true,
+            RequiresChannelEnablement = true
         };
 
         public override SlashCommandProperties BuiltCommand => new SlashCommandBuilder()
