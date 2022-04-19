@@ -26,13 +26,14 @@ namespace po.DiscordImpl.SlashCommands
         private readonly string[] commandNames = new[]
         {
             "nuke-messages",
-            "nuke-messages-older-than-day"
+            "nuke-messages-older-than-day",
+            "po",
         };
 
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "commandlist",
-            Version = 2,
+            Version = this.commandNames.Length,
             IsGuildLevel = true
         };
 
