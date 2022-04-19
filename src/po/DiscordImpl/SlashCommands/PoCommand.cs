@@ -138,6 +138,7 @@ namespace po.DiscordImpl.SlashCommands
                                     CountSeen = g.Count(b => b.Seen),
                                     CountUnseen = g.Count(b => !b.Seen)
                                 })
+                                .OrderBy(g => g.Key)
                                 .ToListAsync();
 
                 StringBuilder response = new();
