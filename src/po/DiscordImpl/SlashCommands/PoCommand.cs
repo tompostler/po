@@ -83,10 +83,12 @@ namespace po.DiscordImpl.SlashCommands
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
             string operation = payload.Data.Options.First().Name;
+            string category = payload.Data.Options.First().Options?.FirstOrDefault()?.Value as string;
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
             SlashCommandChannel command = await poContext.SlashCommandChannels.SingleAsync(sc => sc.SlashCommandName == payload.CommandName && sc.ChannelId == payload.ChannelId);
 
+            // Handle adding/removing the container and ensuring one is registered
             if (operation == "associate")
             {
                 string containerName = payload.Data.Options.First().Options.First().Value as string;
@@ -104,9 +106,8 @@ namespace po.DiscordImpl.SlashCommands
                     _ = await poContext.SaveChangesAsync();
                     await payload.RespondAsync($"Container `{containerName}` associated with this channel successfully.");
                 }
-                return;
             }
-            if (operation == "disassociate")
+            else if (operation == "disassociate")
             {
                 if (string.IsNullOrWhiteSpace(command.RegistrationData))
                 {
@@ -119,15 +120,14 @@ namespace po.DiscordImpl.SlashCommands
                     _ = await poContext.SaveChangesAsync();
                     await payload.RespondAsync($"Channel successfully disassociated with container `{oldContainerName}`.");
                 }
-                return;
             }
-            if (string.IsNullOrWhiteSpace(command.RegistrationData))
+            else if (string.IsNullOrWhiteSpace(command.RegistrationData))
             {
                 await payload.RespondAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po associate <container-name>`.");
-                return;
             }
 
-            if (operation == "status")
+            // Handle other commands that don't require a category
+            else if (operation == "status")
             {
                 var statuses = await poContext.Blobs
                                 .Where(b => b.ContainerName == command.RegistrationData)
@@ -143,7 +143,7 @@ namespace po.DiscordImpl.SlashCommands
 
                 StringBuilder response = new();
                 int catLen = Math.Max("category".Length, statuses.Max(x => x.Key.Length));
-                int numLen = "percent viewed".Length;
+                int numLen = 8;
                 _ = response.AppendLine("```");
                 _ = response.AppendLine($"{"CATEGORY".PadRight(catLen)}  {"SEEN".PadLeft(numLen)}  {"UNSEEN".PadLeft(numLen)}  {"TOTAL".PadLeft(numLen)}  {"PERCENT VIEWED".PadLeft(numLen)}");
                 foreach (var status in statuses)
@@ -172,12 +172,30 @@ namespace po.DiscordImpl.SlashCommands
                 _ = response.Append((1d * statuses.Sum(x => x.CountSeen) / ovetot).ToString("P2").PadLeft(numLen));
                 _ = response.AppendLine("```");
                 await payload.RespondAsync(response.ToString());
-                return;
             }
 
-            string category = payload.Data.Options.First().Options.First().Value as string;
+            else if (operation == "show")
+            {
+                PoBlob blob = await poContext.Blobs
+                                .Where(x => x.Category.StartsWith(category) && !x.Seen)
+                                .OrderBy(x => Guid.NewGuid())
+                                .FirstOrDefaultAsync();
 
-            throw new NotImplementedException($"`{operation}` with category `{category ?? "<null>"}` is not complete.");
+                if (blob == default)
+                {
+                    await payload.RespondAsync($"Category prefix `{category ?? "<null>"}` has no images remaining. Try `/po reset category`");
+                }
+                else
+                {
+                    await payload.RespondAsync($"Not fully implemented. Would display: {blob}");
+                }
+            }
+
+            // Default behavior is to throw up
+            else
+            {
+                throw new NotImplementedException($"`{operation}` with category `{category ?? "<null>"}` is not complete.");
+            }
         }
     }
 }
