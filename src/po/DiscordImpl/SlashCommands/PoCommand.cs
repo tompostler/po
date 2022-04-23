@@ -187,14 +187,27 @@ namespace po.DiscordImpl.SlashCommands
                 }
                 else
                 {
-                    //var builder = new EmbedBuilder()
-                    //{
-                    //    Title = blob.Name,
-                    //    Description = default,
-                    //    ImageUrl = this.poStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
-                    //};
-                    //await payload.RespondAsync(embed: builder.Build());
-                    await payload.RespondAsync($"Not fully implemented. Would display: {blob}"); ;
+                    var counts = await poContext.Blobs
+                                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                                .GroupBy(x => x.Category)
+                                .Select(g => new
+                                {
+                                    g.Key,
+                                    CountUnseen = g.Count()
+                                })
+                                .ToListAsync();
+                    double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
+
+                    var builder = new EmbedBuilder()
+                    {
+                        Title = blob.Name,
+                        Description = $"Request: `{category ?? "all"}` ({payload.User.Username})\nResponse category chance: {chance:P2}",
+                        ImageUrl = this.poStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
+                    };
+                    await payload.RespondAsync(embed: builder.Build());
+
+                    blob.Seen = true;
+                    _ = await poContext.SaveChangesAsync();
                 }
             }
 
