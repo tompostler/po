@@ -89,7 +89,7 @@ namespace po.DiscordImpl.SlashCommands
                 int totalCountReset = 0;
                 foreach (string categoryToReset in categoriesToReset)
                 {
-                    int countReset = await poContext.Database.ExecuteSqlRawAsync("UPDATE [Blobs] SET [Seen] = 0 WHERE [Category] = {0}", categoryToReset);
+                    int countReset = await poContext.Database.ExecuteSqlRawAsync("UPDATE [Blobs] SET [Seen] = 0 WHERE [Category] = {0} AND [Seen] = 1", categoryToReset);
                     totalCountReset += countReset;
                     _ = await payload.Channel.SendMessageAsync($"Reset view status for {countReset} images in the `{categoryToReset}` category.");
                 }
