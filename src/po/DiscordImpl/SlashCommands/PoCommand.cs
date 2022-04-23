@@ -15,14 +15,14 @@ namespace po.DiscordImpl.SlashCommands
     public class PoCommand : SlashCommandBase
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoBlobStorage poStorage;
+        private readonly PoStorage poBlobStorage;
 
         public PoCommand(
             IServiceProvider serviceProvider,
-            PoBlobStorage poStorage)
+            PoStorage poBlobStorage)
         {
             this.serviceProvider = serviceProvider;
-            this.poStorage = poStorage;
+            this.poBlobStorage = poBlobStorage;
         }
 
         public override SlashCommand ExpectedCommand => new()
@@ -124,7 +124,7 @@ namespace po.DiscordImpl.SlashCommands
                     {
                         Title = blob.Name,
                         Description = $"Request: `{category ?? "(any)"}` ({payload.User.Username})\nResponse category chance: {chance:P2}",
-                        ImageUrl = this.poStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
+                        ImageUrl = this.poBlobStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
                     };
                     await payload.RespondAsync(embed: builder.Build());
 

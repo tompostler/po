@@ -16,14 +16,14 @@ namespace po.Services.Background
 {
     public sealed class SyncBlobMetadataBackgroundService : SqlSynchronizedBackgroundService
     {
-        private readonly PoBlobStorage storage;
+        private readonly PoStorage storage;
         private readonly Options.Discord discordOptions;
 
         public SyncBlobMetadataBackgroundService(
             IServiceProvider serviceProvider,
             Sentinals sentinals,
             ILogger<SyncBlobMetadataBackgroundService> logger,
-            PoBlobStorage storage,
+            PoStorage storage,
             IOptions<Options.Discord> options)
             : base(serviceProvider, sentinals, logger)
         {

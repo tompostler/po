@@ -37,7 +37,7 @@ namespace po
                       provider.GetRequiredService<IOptions<Options.Sql>>().Value.ConnectionString,
                       sqloptions => sqloptions
                           .EnableRetryOnFailure()));
-            _ = services.AddSingleton<DataAccess.PoBlobStorage>();
+            _ = services.AddSingleton<DataAccess.PoStorage>();
 
             _ = services.AddSingleton<Utilities.Sentinals>();
 
