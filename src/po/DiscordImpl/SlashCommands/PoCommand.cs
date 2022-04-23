@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using po.DataAccess;
 using po.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,7 +28,7 @@ namespace po.DiscordImpl.SlashCommands
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "po",
-            Version = 2,
+            Version = 3,
             IsGuildLevel = true,
             RequiresChannelEnablement = true
         };
@@ -36,28 +37,12 @@ namespace po.DiscordImpl.SlashCommands
             .WithName(this.ExpectedCommand.Name)
             .WithDescription("Displays images from blob storage.")
             .AddOption(new SlashCommandOptionBuilder()
-                .WithName("associate")
-                .WithDescription("Associates a blob container of images with this channel.")
-                .WithType(ApplicationCommandOptionType.SubCommand)
-                .AddOption(new SlashCommandOptionBuilder()
-                    .WithName("container-name")
-                    .WithDescription("The name of the container to associate, max one per channel.")
-                    .WithType(ApplicationCommandOptionType.String)
-                    .WithRequired(true)
-                )
-            )
-            .AddOption(new SlashCommandOptionBuilder()
-                .WithName("disassociate")
-                .WithDescription("Disassociates the currently associated blob container from this channel.")
-                .WithType(ApplicationCommandOptionType.SubCommand)
-            )
-            .AddOption(new SlashCommandOptionBuilder()
                 .WithName("reset")
-                .WithDescription("Reset the current view statistics for a category.")
+                .WithDescription("Reset the seen statistics.")
                 .WithType(ApplicationCommandOptionType.SubCommand)
                 .AddOption(new SlashCommandOptionBuilder()
                     .WithName("category")
-                    .WithDescription("Use 'all' for all categories.")
+                    .WithDescription("The category (or category prefix) of images to reset the seen status.")
                     .WithType(ApplicationCommandOptionType.String)
                     .WithRequired(true)
                 )
@@ -88,45 +73,66 @@ namespace po.DiscordImpl.SlashCommands
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
             SlashCommandChannel command = await poContext.SlashCommandChannels.SingleAsync(sc => sc.SlashCommandName == payload.CommandName && sc.ChannelId == payload.ChannelId);
 
-            // Handle adding/removing the container and ensuring one is registered
-            if (operation == "associate")
+            if (string.IsNullOrWhiteSpace(command.RegistrationData))
             {
-                string containerName = payload.Data.Options.First().Options.First().Value as string;
-                if (!await this.poStorage.ContainerExistsAsync(containerName))
-                {
-                    await payload.RespondAsync($"Container `{containerName}` does not exist and cannot be associated with the current channel.");
-                }
-                else if (!string.IsNullOrWhiteSpace(command.RegistrationData))
-                {
-                    await payload.RespondAsync($"This channel is already associated with container `{containerName}`. To disassociate, use `/po disassociate`.");
-                }
-                else
-                {
-                    command.RegistrationData = containerName;
-                    _ = await poContext.SaveChangesAsync();
-                    await payload.RespondAsync($"Container `{containerName}` associated with this channel successfully.");
-                }
-            }
-            else if (operation == "disassociate")
-            {
-                if (string.IsNullOrWhiteSpace(command.RegistrationData))
-                {
-                    await payload.RespondAsync("This channel is already not associated with any containers.");
-                }
-                else
-                {
-                    string oldContainerName = command.RegistrationData;
-                    command.RegistrationData = null;
-                    _ = await poContext.SaveChangesAsync();
-                    await payload.RespondAsync($"Channel successfully disassociated with container `{oldContainerName}`.");
-                }
-            }
-            else if (string.IsNullOrWhiteSpace(command.RegistrationData))
-            {
-                await payload.RespondAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po associate <container-name>`.");
+                await payload.RespondAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.");
             }
 
-            // Handle other commands that don't require a category
+            else if (operation == "reset")
+            {
+                List<string> categoriesToReset = await poContext.Blobs
+                            .Where(x => x.Category.StartsWith(category ?? string.Empty) && x.Seen)
+                            .GroupBy(x => x.Category)
+                            .Select(g => g.Key)
+                            .ToListAsync();
+
+                int totalCountReset = 0;
+                foreach (string categoryToReset in categoriesToReset)
+                {
+                    int countReset = await poContext.Database.ExecuteSqlRawAsync("UPDATE [Blobs] SET [Seen] = 0 WHERE [Category] = {0}", categoryToReset);
+                    totalCountReset += countReset;
+                    _ = await payload.Channel.SendMessageAsync($"Reset view status for {countReset} images in the `{categoryToReset}` category.");
+                }
+                await payload.RespondAsync($"Reset view status for {totalCountReset} total images across {categoriesToReset.Count} categories.");
+            }
+
+            else if (operation == "show")
+            {
+                PoBlob blob = await poContext.Blobs
+                                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                                .OrderBy(x => Guid.NewGuid())
+                                .FirstOrDefaultAsync();
+
+                if (blob == default)
+                {
+                    await payload.RespondAsync($"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`");
+                }
+                else
+                {
+                    var counts = await poContext.Blobs
+                                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                                .GroupBy(x => x.Category)
+                                .Select(g => new
+                                {
+                                    g.Key,
+                                    CountUnseen = g.Count()
+                                })
+                                .ToListAsync();
+                    double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
+
+                    var builder = new EmbedBuilder()
+                    {
+                        Title = blob.Name,
+                        Description = $"Request: `{category ?? "(any)"}` ({payload.User.Username})\nResponse category chance: {chance:P2}",
+                        ImageUrl = this.poStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
+                    };
+                    await payload.RespondAsync(embed: builder.Build());
+
+                    blob.Seen = true;
+                    _ = await poContext.SaveChangesAsync();
+                }
+            }
+
             else if (operation == "status")
             {
                 var statuses = await poContext.Blobs
@@ -174,47 +180,10 @@ namespace po.DiscordImpl.SlashCommands
                 await payload.RespondAsync(response.ToString());
             }
 
-            else if (operation == "show")
-            {
-                PoBlob blob = await poContext.Blobs
-                                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                                .OrderBy(x => Guid.NewGuid())
-                                .FirstOrDefaultAsync();
-
-                if (blob == default)
-                {
-                    await payload.RespondAsync($"Category prefix `{category ?? "<null>"}` has no images remaining. Try `/po reset category`");
-                }
-                else
-                {
-                    var counts = await poContext.Blobs
-                                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                                .GroupBy(x => x.Category)
-                                .Select(g => new
-                                {
-                                    g.Key,
-                                    CountUnseen = g.Count()
-                                })
-                                .ToListAsync();
-                    double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
-
-                    var builder = new EmbedBuilder()
-                    {
-                        Title = blob.Name,
-                        Description = $"Request: `{category ?? "all"}` ({payload.User.Username})\nResponse category chance: {chance:P2}",
-                        ImageUrl = this.poStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
-                    };
-                    await payload.RespondAsync(embed: builder.Build());
-
-                    blob.Seen = true;
-                    _ = await poContext.SaveChangesAsync();
-                }
-            }
-
             // Default behavior is to throw up
             else
             {
-                throw new NotImplementedException($"`{operation}` with category `{category ?? "<null>"}` is not complete.");
+                throw new NotImplementedException($"`{operation}` with category `{category ?? "(any)"}` is not complete.");
             }
         }
     }
