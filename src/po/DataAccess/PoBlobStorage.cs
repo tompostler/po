@@ -12,14 +12,14 @@ using System.Threading.Tasks;
 
 namespace po.DataAccess
 {
-    public sealed class PoStorage
+    public sealed class PoBlobStorage
     {
         private readonly BlobServiceClient blobServiceClient;
-        private readonly ILogger<PoStorage> logger;
+        private readonly ILogger<PoBlobStorage> logger;
 
-        public PoStorage(
+        public PoBlobStorage(
             IOptions<Options.Storage> options,
-            ILogger<PoStorage> logger)
+            ILogger<PoBlobStorage> logger)
         {
             this.blobServiceClient = new BlobServiceClient(options.Value.ConnectionString);
             this.logger = logger;

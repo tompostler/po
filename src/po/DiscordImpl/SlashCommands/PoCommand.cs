@@ -15,11 +15,11 @@ namespace po.DiscordImpl.SlashCommands
     public class PoCommand : SlashCommandBase
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoStorage poStorage;
+        private readonly PoBlobStorage poStorage;
 
         public PoCommand(
             IServiceProvider serviceProvider,
-            PoStorage poStorage)
+            PoBlobStorage poStorage)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poStorage;
