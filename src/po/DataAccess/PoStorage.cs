@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -57,5 +58,11 @@ namespace po.DataAccess
 
         public async Task<bool> ContainerExistsAsync(string containerName)
             => await this.blobServiceClient.GetBlobContainerClient(containerName).ExistsAsync();
+
+        public Uri GetOneDayReadOnlySasUri(Models.PoBlob blob)
+            => this.blobServiceClient
+                .GetBlobContainerClient(blob.ContainerName)
+                .GetBlobClient(blob.Name)
+                .GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddDays(1));
     }
 }

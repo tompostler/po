@@ -177,7 +177,7 @@ namespace po.DiscordImpl.SlashCommands
             else if (operation == "show")
             {
                 PoBlob blob = await poContext.Blobs
-                                .Where(x => x.Category.StartsWith(category) && !x.Seen)
+                                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
                                 .OrderBy(x => Guid.NewGuid())
                                 .FirstOrDefaultAsync();
 
@@ -187,7 +187,14 @@ namespace po.DiscordImpl.SlashCommands
                 }
                 else
                 {
-                    await payload.RespondAsync($"Not fully implemented. Would display: {blob}");
+                    //var builder = new EmbedBuilder()
+                    //{
+                    //    Title = blob.Name,
+                    //    Description = default,
+                    //    ImageUrl = this.poStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
+                    //};
+                    //await payload.RespondAsync(embed: builder.Build());
+                    await payload.RespondAsync($"Not fully implemented. Would display: {blob}"); ;
                 }
             }
 
