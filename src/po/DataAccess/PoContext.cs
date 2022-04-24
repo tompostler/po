@@ -9,6 +9,7 @@ namespace po.DataAccess
         private readonly ILoggerFactory loggerFactory;
 
         public DbSet<PoBlob> Blobs { get; set; }
+        public DbSet<ScheduledBlob> ScheduledBlobs { get; set; }
         public DbSet<SlashCommand> SlashCommands { get; set; }
         public DbSet<SlashCommandChannel> SlashCommandChannels { get; set; }
         public DbSet<SynchronizedBackgroundService> SynchronizedBackgroundServices { get; set; }
@@ -31,6 +32,16 @@ namespace po.DataAccess
         {
             _ = modelBuilder.Entity<PoBlob>()
                 .HasKey(x => new { x.AccountName, x.ContainerName, x.Name });
+
+            _ = modelBuilder.HasSequence<long>("ScheduledBlobIds");
+
+            _ = modelBuilder.Entity<ScheduledBlob>()
+                .Property(x => x.Id)
+                .HasDefaultValueSql("NEXT VALUE FOR dbo.ScheduledBlobIds");
+
+            _ = modelBuilder.Entity<ScheduledBlob>()
+                .Property(x => x.CreatedDate)
+                .HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
             _ = modelBuilder.Entity<SlashCommand>()
                 .HasKey(x => x.Name);

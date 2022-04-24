@@ -63,12 +63,35 @@ namespace po.DiscordImpl.SlashCommands
                 .WithDescription("Generates a status report of viewed images.")
                 .WithType(ApplicationCommandOptionType.SubCommand)
             )
+            .AddOption(new SlashCommandOptionBuilder()
+                .WithName("timer")
+                .WithDescription("Schedule the display of a bunch of images.")
+                .WithType(ApplicationCommandOptionType.SubCommand)
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("interval")
+                    .WithDescription("The time between displayed images expressed as a number suffixed with 'd', 'h', or 'm' for scale.")
+                    .WithType(ApplicationCommandOptionType.String)
+                    .WithRequired(true)
+                )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("duration")
+                    .WithDescription("The duration to display images expressed as a number suffixed with 'd', 'h', or 'm' for scale.")
+                    .WithType(ApplicationCommandOptionType.String)
+                    .WithRequired(true)
+                )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("category")
+                    .WithDescription("The category (or category prefix) for images to display.")
+                    .WithType(ApplicationCommandOptionType.String)
+                    .WithRequired(false)
+                )
+            )
             .Build();
 
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
             string operation = payload.Data.Options.First().Name;
-            string category = payload.Data.Options.First().Options?.FirstOrDefault()?.Value as string;
+            string category = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "category")?.Value as string;
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
             SlashCommandChannel command = await poContext.SlashCommandChannels.SingleAsync(sc => sc.SlashCommandName == payload.CommandName && sc.ChannelId == payload.ChannelId);
@@ -180,10 +203,136 @@ namespace po.DiscordImpl.SlashCommands
                 await payload.RespondAsync(response.ToString());
             }
 
+            else if (operation == "timer")
+            {
+                string errorMessage = default;
+
+                string intervalInput = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "interval")?.Value as string;
+                if (string.IsNullOrEmpty(intervalInput))
+                {
+                    errorMessage = "`interval` must be supplied.";
+                }
+                (string msg, TimeSpan parsed) interval = GetTimeSpan(intervalInput);
+                if (interval.msg != default)
+                {
+                    errorMessage = interval.msg;
+                }
+                else if (interval.parsed < TimeSpan.FromSeconds(30) || interval.parsed > TimeSpan.FromDays(3))
+                {
+                    errorMessage = $"Interval must be between 30 seconds and 3 days. (Is currently `{interval.parsed}`)";
+                }
+
+                string durationInput = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "duration")?.Value as string;
+                if (string.IsNullOrEmpty(durationInput))
+                {
+                    errorMessage = "`duration` must be supplied.";
+                }
+                (string msg, TimeSpan parsed) duration = GetTimeSpan(durationInput);
+                if (duration.msg != default)
+                {
+                    errorMessage = duration.msg;
+                }
+                else if (duration.parsed > TimeSpan.FromDays(30))
+                {
+                    errorMessage = $"Duration cannot last more than 30 days. (Is currently `{duration.parsed}`)";
+                }
+
+                int countRequested = (int)(duration.parsed.TotalSeconds / interval.parsed.TotalSeconds) + 1;
+                int countAvailable = await poContext.Blobs.CountAsync(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen);
+                if (countRequested > countAvailable * 1.1)
+                {
+                    errorMessage = $"Requested to schedule {countRequested}, but only {countAvailable} are available (including a 10% buffer). Request fewer scheduled images.";
+                }
+
+                if (errorMessage != default)
+                {
+                    await payload.RespondAsync(errorMessage);
+                    return;
+                }
+
+                for (int i = 0; i < countRequested; i++)
+                {
+                    _ = poContext.ScheduledBlobs.Add(
+                        new ScheduledBlob
+                        {
+                            Category = category,
+                            ChannelId = command.ChannelId,
+                            ScheduledDate = DateTimeOffset.UtcNow.AddSeconds(interval.parsed.TotalSeconds * i),
+                            Username = payload.User.Username + $", timer {i + 1}/{countRequested}"
+                        });
+                }
+                _ = await poContext.SaveChangesAsync();
+
+                //if (blob == default)
+                //{
+                //    await payload.RespondAsync($"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`");
+                //}
+                //else
+                //{
+                //    var counts = await poContext.Blobs
+                //                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                //                .GroupBy(x => x.Category)
+                //                .Select(g => new
+                //                {
+                //                    g.Key,
+                //                    CountUnseen = g.Count()
+                //                })
+                //                .ToListAsync();
+                //    double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
+
+                //    var builder = new EmbedBuilder()
+                //    {
+                //        Title = blob.Name,
+                //        Description = $"Request: `{category ?? "(any)"}` ({payload.User.Username})\nResponse category chance: {chance:P2}",
+                //        ImageUrl = this.poBlobStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
+                //    };
+                //    await payload.RespondAsync(embed: builder.Build());
+
+                //    blob.Seen = true;
+                //    _ = await poContext.SaveChangesAsync();
+                //}
+            }
+
             // Default behavior is to throw up
             else
             {
                 throw new NotImplementedException($"`{operation}` with category `{category ?? "(any)"}` is not complete.");
+            }
+        }
+
+        private static (string msg, TimeSpan parsed) GetTimeSpan(string source)
+        {
+            // Look for the following formats:
+            //  ##d --> number of days
+            //  ##h --> number of hours
+            //  ##m --> number of minutes
+            //  HH:MM:SS --> regular timespan parsing
+
+            source = source.ToLower();
+            double parsed;
+            if (source.Contains('m'))
+            {
+                return double.TryParse(source.Replace("m", string.Empty), out parsed)
+                    ? (null, TimeSpan.FromMinutes(parsed))
+                    : ($"Found a `m`, but couldn't parse minutes from '{source}'.", default);
+            }
+            else if (source.Contains('h'))
+            {
+                return double.TryParse(source.Replace("h", string.Empty), out parsed)
+                    ? (null, TimeSpan.FromHours(parsed))
+                    : ($"Found a `h`, but couldn't parse hours from '{source}'.", default);
+            }
+            else if (source.Contains('d'))
+            {
+                return double.TryParse(source.Replace("d", string.Empty), out parsed)
+                    ? (null, TimeSpan.FromDays(parsed))
+                    : ($"Found a `d`, but couldn't parse days from '{source}'.", default);
+            }
+            else
+            {
+                return TimeSpan.TryParse(source, out TimeSpan parsedt)
+                    ? (null, parsedt)
+                    : ($"Couldn't parse a `TimeSpan` from '{source}'.", default);
             }
         }
     }
