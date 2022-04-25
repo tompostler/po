@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using po.DataAccess;
+using po.Extensions;
 using po.Models;
 using System;
 using System.Collections.Generic;
@@ -15,14 +16,14 @@ namespace po.DiscordImpl.SlashCommands
     public class PoCommand : SlashCommandBase
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoStorage poBlobStorage;
+        private readonly PoStorage poStorage;
 
         public PoCommand(
             IServiceProvider serviceProvider,
             PoStorage poBlobStorage)
         {
             this.serviceProvider = serviceProvider;
-            this.poBlobStorage = poBlobStorage;
+            this.poStorage = poBlobStorage;
         }
 
         public override SlashCommand ExpectedCommand => new()
@@ -121,7 +122,9 @@ namespace po.DiscordImpl.SlashCommands
 
             else if (operation == "show")
             {
-                await this.SendSingleImageAsync(
+                await DiscordExtensions.SendSingleImageAsync(
+                    this.serviceProvider,
+                    this.poStorage,
                     category,
                     payload.User.Username,
                     (message) => payload.RespondAsync(message),
@@ -234,56 +237,14 @@ namespace po.DiscordImpl.SlashCommands
                         });
                 }
                 _ = await poContext.SaveChangesAsync();
+
+                await payload.RespondAsync($"Scheduled {countRequested} images every {interval.parsed} for the next {duration.parsed}.");
             }
 
             // Default behavior is to throw up
             else
             {
                 throw new NotImplementedException($"`{operation}` with category `{category ?? "(any)"}` is not complete.");
-            }
-        }
-
-        public async Task SendSingleImageAsync(
-            string category,
-            string username,
-            Func<string, Task> textMessageResponse,
-            Func<Embed, Task> embedMessageResponse)
-        {
-            using IServiceScope scope = this.serviceProvider.CreateScope();
-            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-
-            PoBlob blob = await poContext.Blobs
-                            .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                            .OrderBy(x => Guid.NewGuid())
-                            .FirstOrDefaultAsync();
-
-            if (blob == default)
-            {
-                await textMessageResponse($"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`");
-            }
-            else
-            {
-                var counts = await poContext.Blobs
-                            .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                            .GroupBy(x => x.Category)
-                            .Select(g => new
-                            {
-                                g.Key,
-                                CountUnseen = g.Count()
-                            })
-                            .ToListAsync();
-                double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
-
-                var builder = new EmbedBuilder()
-                {
-                    Title = blob.Name,
-                    Description = $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}",
-                    ImageUrl = this.poBlobStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
-                };
-                await embedMessageResponse(builder.Build());
-
-                blob.Seen = true;
-                _ = await poContext.SaveChangesAsync();
             }
         }
 

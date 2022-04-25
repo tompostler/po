@@ -45,6 +45,7 @@ namespace po
             _ = services.AddHostedService<Services.MigrationService>();
             
             _ = services.AddHostedService<Services.Background.CleanUpOldMessagesBackgroundService>();
+            _ = services.AddHostedService<Services.Background.ScheduledBlobBackgroundService>();
             _ = services.AddHostedService<Services.Background.SyncBlobMetadataBackgroundService>();
 
             _ = services.AddDiscordBotSlashCommands();
