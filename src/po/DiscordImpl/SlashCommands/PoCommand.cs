@@ -28,7 +28,7 @@ namespace po.DiscordImpl.SlashCommands
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "po",
-            Version = 3,
+            Version = 4,
             IsGuildLevel = true,
             RequiresChannelEnablement = true
         };
@@ -121,39 +121,11 @@ namespace po.DiscordImpl.SlashCommands
 
             else if (operation == "show")
             {
-                PoBlob blob = await poContext.Blobs
-                                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                                .OrderBy(x => Guid.NewGuid())
-                                .FirstOrDefaultAsync();
-
-                if (blob == default)
-                {
-                    await payload.RespondAsync($"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`");
-                }
-                else
-                {
-                    var counts = await poContext.Blobs
-                                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                                .GroupBy(x => x.Category)
-                                .Select(g => new
-                                {
-                                    g.Key,
-                                    CountUnseen = g.Count()
-                                })
-                                .ToListAsync();
-                    double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
-
-                    var builder = new EmbedBuilder()
-                    {
-                        Title = blob.Name,
-                        Description = $"Request: `{category ?? "(any)"}` ({payload.User.Username})\nResponse category chance: {chance:P2}",
-                        ImageUrl = this.poBlobStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
-                    };
-                    await payload.RespondAsync(embed: builder.Build());
-
-                    blob.Seen = true;
-                    _ = await poContext.SaveChangesAsync();
-                }
+                await this.SendSingleImageAsync(
+                    category,
+                    payload.User.Username,
+                    (message) => payload.RespondAsync(message),
+                    (embed) => payload.RespondAsync(embed: embed));
             }
 
             else if (operation == "status")
@@ -262,41 +234,56 @@ namespace po.DiscordImpl.SlashCommands
                         });
                 }
                 _ = await poContext.SaveChangesAsync();
-
-                //if (blob == default)
-                //{
-                //    await payload.RespondAsync($"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`");
-                //}
-                //else
-                //{
-                //    var counts = await poContext.Blobs
-                //                .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                //                .GroupBy(x => x.Category)
-                //                .Select(g => new
-                //                {
-                //                    g.Key,
-                //                    CountUnseen = g.Count()
-                //                })
-                //                .ToListAsync();
-                //    double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
-
-                //    var builder = new EmbedBuilder()
-                //    {
-                //        Title = blob.Name,
-                //        Description = $"Request: `{category ?? "(any)"}` ({payload.User.Username})\nResponse category chance: {chance:P2}",
-                //        ImageUrl = this.poBlobStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
-                //    };
-                //    await payload.RespondAsync(embed: builder.Build());
-
-                //    blob.Seen = true;
-                //    _ = await poContext.SaveChangesAsync();
-                //}
             }
 
             // Default behavior is to throw up
             else
             {
                 throw new NotImplementedException($"`{operation}` with category `{category ?? "(any)"}` is not complete.");
+            }
+        }
+
+        public async Task SendSingleImageAsync(
+            string category,
+            string username,
+            Func<string, Task> textMessageResponse,
+            Func<Embed, Task> embedMessageResponse)
+        {
+            using IServiceScope scope = this.serviceProvider.CreateScope();
+            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+
+            PoBlob blob = await poContext.Blobs
+                            .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                            .OrderBy(x => Guid.NewGuid())
+                            .FirstOrDefaultAsync();
+
+            if (blob == default)
+            {
+                await textMessageResponse($"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`");
+            }
+            else
+            {
+                var counts = await poContext.Blobs
+                            .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                            .GroupBy(x => x.Category)
+                            .Select(g => new
+                            {
+                                g.Key,
+                                CountUnseen = g.Count()
+                            })
+                            .ToListAsync();
+                double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
+
+                var builder = new EmbedBuilder()
+                {
+                    Title = blob.Name,
+                    Description = $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}",
+                    ImageUrl = this.poBlobStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
+                };
+                await embedMessageResponse(builder.Build());
+
+                blob.Seen = true;
+                _ = await poContext.SaveChangesAsync();
             }
         }
 
@@ -335,5 +322,7 @@ namespace po.DiscordImpl.SlashCommands
                     : ($"Couldn't parse a `TimeSpan` from '{source}'.", default);
             }
         }
+
+
     }
 }
