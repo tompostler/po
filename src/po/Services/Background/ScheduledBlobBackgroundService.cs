@@ -39,32 +39,39 @@ namespace po.Services.Background
             while (!stoppingToken.IsCancellationRequested)
             {
                 var delay = TimeSpan.FromMinutes(1);
-                using (IServiceScope scope = this.serviceProvider.CreateScope())
-                using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
+                try
                 {
-                    Models.ScheduledBlob nextScheduledBlob = await poContext.ScheduledBlobs
-                                                                .OrderBy(x => x.ScheduledDate)
-                                                                .FirstOrDefaultAsync(stoppingToken);
-
-                    if (nextScheduledBlob.ScheduledDate < DateTimeOffset.UtcNow)
+                    using (IServiceScope scope = this.serviceProvider.CreateScope())
+                    using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                     {
-                        DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
-                        var channel = discordClient.GetChannel(nextScheduledBlob.ChannelId) as SocketTextChannel;
+                        Models.ScheduledBlob nextScheduledBlob = await poContext.ScheduledBlobs
+                                                                    .OrderBy(x => x.ScheduledDate)
+                                                                    .FirstOrDefaultAsync(stoppingToken);
 
-                        await DiscordExtensions.SendSingleImageAsync(
-                            this.serviceProvider,
-                            this.poStorage,
-                            nextScheduledBlob.Category,
-                            nextScheduledBlob.Username,
-                            (message) => channel.SendMessageAsync(message),
-                            (embed) => channel.SendMessageAsync(embed: embed));
+                        if (nextScheduledBlob?.ScheduledDate < DateTimeOffset.UtcNow)
+                        {
+                            DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
+                            var channel = discordClient.GetChannel(nextScheduledBlob.ChannelId) as SocketTextChannel;
+
+                            await DiscordExtensions.SendSingleImageAsync(
+                                this.serviceProvider,
+                                this.poStorage,
+                                nextScheduledBlob.Category,
+                                nextScheduledBlob.Username,
+                                (message) => channel.SendMessageAsync(message),
+                                (embed) => channel.SendMessageAsync(embed: embed));
+                        }
+                        else if (nextScheduledBlob != default)
+                        {
+                            delay = nextScheduledBlob.ScheduledDate.Subtract(DateTimeOffset.UtcNow);
+                        }
                     }
-                    else if (nextScheduledBlob != default)
-                    {
-                        delay = nextScheduledBlob.ScheduledDate.Subtract(DateTimeOffset.UtcNow);
-                    }
+                    delay = TimeSpan.FromMinutes(Math.Max(1, delay.TotalMinutes / 2));
                 }
-                delay = TimeSpan.FromMinutes(Math.Max(1, delay.TotalMinutes / 2));
+                catch (Exception ex)
+                {
+                    this.logger.LogError(ex, "Could not check/handle scheduled image.");
+                }
 
                 this.logger.LogInformation($"Sleeping {delay} until the next iteration.");
                 await Task.Delay(delay, stoppingToken);
