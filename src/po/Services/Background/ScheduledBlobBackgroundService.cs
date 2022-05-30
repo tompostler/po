@@ -60,6 +60,9 @@ namespace po.Services.Background
                                 nextScheduledBlob.Username,
                                 (message) => channel.SendMessageAsync(message),
                                 (embed) => channel.SendMessageAsync(embed: embed));
+
+                            _ = poContext.ScheduledBlobs.Remove(nextScheduledBlob);
+                            _ = await poContext.SaveChangesAsync(stoppingToken);
                         }
                         else if (nextScheduledBlob != default)
                         {
