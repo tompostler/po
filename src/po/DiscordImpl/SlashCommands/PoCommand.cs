@@ -225,6 +225,9 @@ namespace po.DiscordImpl.SlashCommands
                     return;
                 }
 
+                // Allow time to respond to the command
+                await payload.DeferAsync();
+
                 for (int i = 0; i < countRequested; i++)
                 {
                     _ = poContext.ScheduledBlobs.Add(
