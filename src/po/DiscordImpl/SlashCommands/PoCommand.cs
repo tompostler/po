@@ -206,7 +206,7 @@ namespace po.DiscordImpl.SlashCommands
             {
                 string errorMessage = default;
 
-                int? countRequested = (int?)payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "count")?.Value;
+                long? countRequested = (long?)payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "count")?.Value;
                 if (!countRequested.HasValue)
                 {
                     errorMessage = "`count` must be supplied.";
