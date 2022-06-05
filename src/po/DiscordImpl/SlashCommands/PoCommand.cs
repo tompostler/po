@@ -17,6 +17,7 @@ namespace po.DiscordImpl.SlashCommands
     {
         private readonly IServiceProvider serviceProvider;
         private readonly PoStorage poStorage;
+        private readonly Random random = new();
 
         public PoCommand(
             IServiceProvider serviceProvider,
@@ -29,7 +30,7 @@ namespace po.DiscordImpl.SlashCommands
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "po",
-            Version = 4,
+            Version = 5,
             IsGuildLevel = true,
             RequiresChannelEnablement = true
         };
@@ -37,6 +38,29 @@ namespace po.DiscordImpl.SlashCommands
         public override SlashCommandProperties BuiltCommand => new SlashCommandBuilder()
             .WithName(this.ExpectedCommand.Name)
             .WithDescription("Displays images from blob storage.")
+            .AddOption(new SlashCommandOptionBuilder()
+                .WithName("random")
+                .WithDescription("Schedule the display of a bunch of images.")
+                .WithType(ApplicationCommandOptionType.SubCommand)
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("count")
+                    .WithDescription("The number of images to display.")
+                    .WithType(ApplicationCommandOptionType.Integer)
+                    .WithRequired(true)
+                )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("duration")
+                    .WithDescription("The duration to display images expressed as a number suffixed with 'd', 'h', or 'm' for scale.")
+                    .WithType(ApplicationCommandOptionType.String)
+                    .WithRequired(true)
+                )
+                .AddOption(new SlashCommandOptionBuilder()
+                    .WithName("category")
+                    .WithDescription("The category (or category prefix) for images to display.")
+                    .WithType(ApplicationCommandOptionType.String)
+                    .WithRequired(false)
+                )
+            )
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("reset")
                 .WithDescription("Reset the seen statistics.")
@@ -176,6 +200,70 @@ namespace po.DiscordImpl.SlashCommands
                 _ = response.Append((1d * statuses.Sum(x => x.CountSeen) / ovetot).ToString("P2").PadLeft(numLen));
                 _ = response.AppendLine("```");
                 await payload.RespondAsync(response.ToString());
+            }
+
+            else if (operation == "random")
+            {
+                string errorMessage = default;
+
+                int? countRequested = (int?)payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "count")?.Value;
+                if (!countRequested.HasValue)
+                {
+                    errorMessage = "`count` must be supplied.";
+                }
+                else if (countRequested <= 0 || countRequested > 200)
+                {
+                    errorMessage = $"Count must be between 0 and 200. (Is currently `{countRequested}`)";
+                }
+
+                string durationInput = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "duration")?.Value as string;
+                if (string.IsNullOrEmpty(durationInput))
+                {
+                    errorMessage = "`duration` must be supplied.";
+                }
+                (string msg, TimeSpan parsed) duration = GetTimeSpan(durationInput);
+                if (duration.msg != default)
+                {
+                    errorMessage = duration.msg;
+                }
+                else if (duration.parsed > TimeSpan.FromDays(30))
+                {
+                    errorMessage = $"Duration cannot last more than 30 days. (Is currently `{duration.parsed}`)";
+                }
+                else if (duration.parsed.TotalMinutes / countRequested < 5)
+                {
+                    errorMessage = "Cannot randomize more than 1 image per 5 minutes.";
+                }
+
+                int countAvailable = await poContext.Blobs.CountAsync(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen);
+                if (countRequested > countAvailable * 1.1)
+                {
+                    errorMessage = $"Requested to schedule {countRequested}, but only {countAvailable} are available (including a 10% buffer). Request fewer scheduled images.";
+                }
+
+                if (errorMessage != default)
+                {
+                    await payload.RespondAsync(errorMessage);
+                    return;
+                }
+
+                // Allow time to respond to the command
+                await payload.DeferAsync();
+
+                for (int i = 0; i < countRequested; i++)
+                {
+                    _ = poContext.ScheduledBlobs.Add(
+                        new ScheduledBlob
+                        {
+                            Category = category,
+                            ChannelId = command.ChannelId,
+                            ScheduledDate = DateTimeOffset.UtcNow.AddSeconds(duration.parsed.TotalSeconds * this.random.NextDouble()),
+                            Username = payload.User.Username + $", random {i + 1}/{countRequested}"
+                        });
+                }
+                _ = await poContext.SaveChangesAsync();
+
+                await payload.RespondAsync($"Scheduled {countRequested} images randomly over the next {duration.parsed}.");
             }
 
             else if (operation == "timer")
