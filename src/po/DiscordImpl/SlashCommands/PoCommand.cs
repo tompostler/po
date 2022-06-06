@@ -268,7 +268,7 @@ namespace po.DiscordImpl.SlashCommands
                             Category = category,
                             ChannelId = command.ChannelId,
                             ScheduledDate = DateTimeOffset.UtcNow.Add(delays[i]),
-                            Username = payload.User.Username + $", random {i + 1}/{countRequested}"
+                            Username = payload.User.Username + $", random {i + 1}/{delays.Length}"
                         });
                 }
                 _ = await poContext.SaveChangesAsync();
