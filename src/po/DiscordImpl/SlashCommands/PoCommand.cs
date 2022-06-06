@@ -169,6 +169,12 @@ namespace po.DiscordImpl.SlashCommands
                                 .OrderBy(g => g.Key)
                                 .ToListAsync();
 
+                if (statuses.Count == 0)
+                {
+                    await payload.RespondAsync("No images known.");
+                    return;
+                }
+
                 StringBuilder response = new();
                 int catLen = Math.Max("category".Length, statuses.Max(x => x.Key.Length));
                 int numLen = 8;
