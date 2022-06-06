@@ -250,14 +250,24 @@ namespace po.DiscordImpl.SlashCommands
                 // Allow time to respond to the command
                 await payload.DeferAsync();
 
-                for (int i = 0; i < countRequested; i++)
+                // Create the random intervals (and sort them for sequential counting)
+                var delays = new TimeSpan[countRequested.Value + 1];
+                delays[0] = TimeSpan.Zero;
+                for (int i = 1; i < delays.Length; i++)
+                {
+                    delays[i] = TimeSpan.FromMinutes(duration.parsed.TotalMinutes * this.random.NextDouble());
+                }
+                Array.Sort(delays);
+
+                // Actually schedule the delays
+                for (int i = 0; i < delays.Length; i++)
                 {
                     _ = poContext.ScheduledBlobs.Add(
                         new ScheduledBlob
                         {
                             Category = category,
                             ChannelId = command.ChannelId,
-                            ScheduledDate = DateTimeOffset.UtcNow.AddSeconds(duration.parsed.TotalSeconds * this.random.NextDouble()),
+                            ScheduledDate = DateTimeOffset.UtcNow.Add(delays[i]),
                             Username = payload.User.Username + $", random {i + 1}/{countRequested}"
                         });
                 }
