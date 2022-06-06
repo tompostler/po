@@ -41,6 +41,9 @@ steps:
     contents: '**' 
     targetFolder: $(Build.ArtifactStagingDirectory)
 
+- powershell: 'git log -1 --pretty=%B > $(Build.ArtifactStagingDirectory)/commit-desc.txt'
+  displayName: git commit description
+
 - task: PublishBuildArtifacts@1
   displayName: Publish build artifacts
   inputs:
