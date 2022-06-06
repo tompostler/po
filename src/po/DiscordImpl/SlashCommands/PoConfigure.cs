@@ -72,13 +72,16 @@ namespace po.DiscordImpl.SlashCommands
                 else
                 {
                     // New registration
-                    command = new()
+                    if (command == default)
                     {
-                        SlashCommandName = "po",
-                        ChannelId = payload.ChannelId.Value,
-                        RegistrationData = containerName
-                    };
-                    _ = poContext.SlashCommandChannels.Add(command);
+                        command = new()
+                        {
+                            SlashCommandName = "po",
+                            ChannelId = payload.ChannelId.Value,
+                        };
+                        _ = poContext.SlashCommandChannels.Add(command);
+                    }
+                    command.RegistrationData = containerName;
                     _ = await poContext.SaveChangesAsync();
                     await payload.RespondAsync($"Container `{containerName}` associated with this channel successfully.");
                 }
