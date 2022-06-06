@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.ApplicationInsights;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -23,9 +24,10 @@ namespace po.Services.Background
             IServiceProvider serviceProvider,
             Sentinals sentinals,
             ILogger<SyncBlobMetadataBackgroundService> logger,
+            TelemetryClient telemetryClient,
             PoStorage storage,
             IOptions<Options.Discord> options)
-            : base(serviceProvider, sentinals, logger)
+            : base(serviceProvider, sentinals, logger, telemetryClient)
         {
             this.storage = storage;
             this.discordOptions = options.Value;

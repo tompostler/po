@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Microsoft.ApplicationInsights;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,8 +19,9 @@ namespace po.Services.Background
         public CleanUpOldMessagesBackgroundService(
             IServiceProvider serviceProvider,
             Sentinals sentinals,
-            ILogger<CleanUpOldMessagesBackgroundService> logger)
-            : base(serviceProvider, sentinals, logger)
+            ILogger<CleanUpOldMessagesBackgroundService> logger,
+            TelemetryClient telemetryClient)
+            : base(serviceProvider, sentinals, logger, telemetryClient)
         { }
 
         protected override TimeSpan Interval => TimeSpan.FromDays(1);

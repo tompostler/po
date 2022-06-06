@@ -1,5 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -23,6 +26,7 @@ namespace po.Services
         private readonly Dictionary<string, DiscordImpl.SlashCommands.SlashCommandBase> slashCommands;
         private readonly Options.Discord options;
         private readonly ILogger<BotService> logger;
+        private readonly TelemetryClient telemetryClient;
 
         private DiscordSocketClient discordClient;
 
@@ -31,13 +35,15 @@ namespace po.Services
             Sentinals sentinals,
             IEnumerable<DiscordImpl.SlashCommands.SlashCommandBase> slashCommands,
             IOptions<Options.Discord> options,
-            ILogger<BotService> logger)
+            ILogger<BotService> logger,
+            TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
             this.sentinals = sentinals;
             this.slashCommands = slashCommands.ToDictionary(x => x.ExpectedCommand.Name);
             this.options = options.Value;
             this.logger = logger;
+            this.telemetryClient = telemetryClient;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -96,6 +102,8 @@ namespace po.Services
 
         private async Task DiscordClient_Ready(CancellationToken cancellationToken)
         {
+            using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>($"{this.GetType().FullName}.{nameof(DiscordClient_Ready)}");
+
             await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
             await this.RegisterSlashCommandsAsync(cancellationToken);
             await this.discordClient.TrySendNotificationTextMessageAsync(this.options, $"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}", this.logger, cancellationToken);
@@ -179,6 +187,8 @@ namespace po.Services
 
         private async Task DiscordClient_SlashCommandExecuted(SocketSlashCommand payload)
         {
+            using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>($"{this.GetType().FullName}.{nameof(DiscordClient_SlashCommandExecuted)}");
+            
             try
             {
                 Models.SlashCommand command;

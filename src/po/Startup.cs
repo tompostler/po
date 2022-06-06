@@ -48,8 +48,6 @@ namespace po
             _ = services.AddHostedService<Services.Background.ScheduledBlobBackgroundService>();
             _ = services.AddHostedService<Services.Background.SyncBlobMetadataBackgroundService>();
 
-            _ = services.AddApplicationInsightsTelemetryWorkerService();
-
             _ = services.AddDiscordBotSlashCommands();
         }
 

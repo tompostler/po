@@ -1,4 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -15,15 +18,18 @@ namespace po.Services.Background
         protected readonly IServiceProvider serviceProvider;
         protected readonly Sentinals sentinals;
         protected readonly ILogger logger;
+        private readonly TelemetryClient telemetryClient;
 
         public SqlSynchronizedBackgroundService(
             IServiceProvider serviceProvider,
             Sentinals sentinals,
-            ILogger logger)
+            ILogger logger,
+            TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
             this.sentinals = sentinals;
             this.logger = logger;
+            this.telemetryClient = telemetryClient;
         }
 
         protected override sealed async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -59,6 +65,7 @@ namespace po.Services.Background
                 }
 
                 // And then actually do the work
+                using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>(this.GetType().FullName);
                 try
                 {
                     CancellationToken linkedToken = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, new CancellationTokenSource(this.Interval).Token).Token;

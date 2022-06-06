@@ -1,4 +1,7 @@
 ﻿using Discord.WebSocket;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,17 +22,20 @@ namespace po.Services.Background
         private readonly PoStorage poStorage;
         private readonly Sentinals sentinals;
         private readonly ILogger<ScheduledBlobBackgroundService> logger;
+        private readonly TelemetryClient telemetryClient;
 
         public ScheduledBlobBackgroundService(
             IServiceProvider serviceProvider,
             PoStorage poStorage,
             Sentinals sentinals,
-            ILogger<ScheduledBlobBackgroundService> logger)
+            ILogger<ScheduledBlobBackgroundService> logger,
+            TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poStorage;
             this.sentinals = sentinals;
             this.logger = logger;
+            this.telemetryClient = telemetryClient;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -38,6 +44,7 @@ namespace po.Services.Background
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>(this.GetType().FullName);
                 var delay = TimeSpan.FromMinutes(1);
                 try
                 {
