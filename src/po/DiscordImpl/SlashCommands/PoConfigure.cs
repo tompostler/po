@@ -56,7 +56,7 @@ namespace po.DiscordImpl.SlashCommands
             string operation = payload.Data.Options.First().Name;
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleAsync(sc => sc.SlashCommandName == payload.CommandName && sc.ChannelId == payload.ChannelId);
+            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.ChannelId == payload.ChannelId);
 
             if (operation == "associate")
             {
@@ -65,20 +65,27 @@ namespace po.DiscordImpl.SlashCommands
                 {
                     await payload.RespondAsync($"Container `{containerName}` does not exist and cannot be associated with the current channel.");
                 }
-                else if (!string.IsNullOrWhiteSpace(command.RegistrationData))
+                else if (!string.IsNullOrWhiteSpace(command?.RegistrationData))
                 {
                     await payload.RespondAsync($"This channel is already associated with container `{containerName}`. To disassociate, use `/po-configure disassociate`.");
                 }
                 else
                 {
-                    command.RegistrationData = containerName;
+                    // New registration
+                    command = new()
+                    {
+                        SlashCommandName = "po",
+                        ChannelId = payload.ChannelId.Value,
+                        RegistrationData = containerName
+                    };
+                    _ = poContext.SlashCommandChannels.Add(command);
                     _ = await poContext.SaveChangesAsync();
                     await payload.RespondAsync($"Container `{containerName}` associated with this channel successfully.");
                 }
             }
             else if (operation == "disassociate")
             {
-                if (string.IsNullOrWhiteSpace(command.RegistrationData))
+                if (string.IsNullOrWhiteSpace(command?.RegistrationData))
                 {
                     await payload.RespondAsync("This channel is already not associated with any containers.");
                 }
@@ -90,7 +97,7 @@ namespace po.DiscordImpl.SlashCommands
                     await payload.RespondAsync($"Channel successfully disassociated with container `{oldContainerName}`.");
                 }
             }
-            else if (string.IsNullOrWhiteSpace(command.RegistrationData))
+            else if (string.IsNullOrWhiteSpace(command?.RegistrationData))
             {
                 await payload.RespondAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.");
             }
