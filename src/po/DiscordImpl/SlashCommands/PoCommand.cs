@@ -273,7 +273,7 @@ namespace po.DiscordImpl.SlashCommands
                 }
                 _ = await poContext.SaveChangesAsync();
 
-                await payload.RespondAsync($"Scheduled {countRequested} images randomly over the next {duration.parsed}.");
+                _ = await payload.FollowupAsync($"Scheduled {countRequested} images randomly over the next {duration.parsed}.");
             }
 
             else if (operation == "timer")
@@ -339,7 +339,7 @@ namespace po.DiscordImpl.SlashCommands
                 }
                 _ = await poContext.SaveChangesAsync();
 
-                await payload.RespondAsync($"Scheduled {countRequested} images every {interval.parsed} for the next {duration.parsed}.");
+                _ = await payload.FollowupAsync($"Scheduled {countRequested} images every {interval.parsed} for the next {duration.parsed}.");
             }
 
             // Default behavior is to throw up
