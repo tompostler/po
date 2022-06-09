@@ -8,6 +8,7 @@ using po.Extensions;
 using po.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -311,9 +312,18 @@ namespace po.DiscordImpl.SlashCommands
             _ = response.Append("  ");
             _ = response.Append((1d * statuses.Sum(x => x.CountSeen) / ovetot).ToString("P2").PadLeft(numLen));
             _ = response.AppendLine("```");
+
             string responseString = response.ToString();
             this.logger.LogInformation($"Response length is: {responseString.Length}");
-            await payload.RespondAsync(responseString);
+            if (responseString.Length > 2000)
+            {
+                var fileStream = new MemoryStream(Encoding.UTF8.GetBytes(responseString));
+                await payload.RespondWithFileAsync(fileStream, "po status");
+            }
+            else
+            {
+                await payload.RespondAsync(responseString);
+            }
         }
 
         private static async Task HandleTimerAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
