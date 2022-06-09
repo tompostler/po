@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using po.DataAccess;
 using po.Extensions;
 using po.Models;
@@ -17,14 +18,18 @@ namespace po.DiscordImpl.SlashCommands
     {
         private readonly IServiceProvider serviceProvider;
         private readonly PoStorage poStorage;
+        private readonly ILogger<PoCommand> logger;
+
         private readonly Random random = new();
 
         public PoCommand(
             IServiceProvider serviceProvider,
-            PoStorage poBlobStorage)
+            PoStorage poBlobStorage,
+            ILogger<PoCommand> logger)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poBlobStorage;
+            this.logger = logger;
         }
 
         public override SlashCommand ExpectedCommand => new()
@@ -205,7 +210,9 @@ namespace po.DiscordImpl.SlashCommands
                 _ = response.Append("  ");
                 _ = response.Append((1d * statuses.Sum(x => x.CountSeen) / ovetot).ToString("P2").PadLeft(numLen));
                 _ = response.AppendLine("```");
-                await payload.RespondAsync(response.ToString());
+                string responseString = response.ToString();
+                this.logger.LogInformation($"Response length is: {responseString.Length}");
+                await payload.RespondAsync(responseString);
             }
 
             else if (operation == "random")
