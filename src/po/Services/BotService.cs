@@ -222,7 +222,14 @@ namespace po.Services
                 {
                     if (!payload.HasResponded)
                     {
-                        await payload.RespondAsync($"Caught an exception: {ex}");
+                        // Trim the exception to the 2000 char limit for discord messages
+                        string exString = ex.ToString();
+                        if (exString.Length > 2000)
+                        {
+                            exString = exString.Substring(0, 2000);
+                        }
+
+                        await payload.RespondAsync($"Caught an exception: {exString}");
                     }
                 }
                 catch (Exception nestedEx)
