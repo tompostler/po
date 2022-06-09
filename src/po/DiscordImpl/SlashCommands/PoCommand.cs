@@ -317,8 +317,8 @@ namespace po.DiscordImpl.SlashCommands
             this.logger.LogInformation($"Response length is: {responseString.Length}");
             if (responseString.Length > 2000)
             {
-                var fileStream = new MemoryStream(Encoding.UTF8.GetBytes(responseString));
-                await payload.RespondWithFileAsync(fileStream, "po status");
+                var fileStream = new MemoryStream(Encoding.UTF8.GetBytes(responseString.Trim().Trim('`')));
+                await payload.RespondWithFileAsync(fileStream, "po-status.txt");
             }
             else
             {

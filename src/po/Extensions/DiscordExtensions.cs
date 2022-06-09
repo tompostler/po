@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using po.DataAccess;
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,12 +16,21 @@ namespace po.Extensions
     {
         public static RequestOptions ToRO(this CancellationToken @this) => new() { CancelToken = @this };
 
-        public static async Task TrySendNotificationTextMessageAsync(this Discord.WebSocket.DiscordSocketClient @this, Options.Discord options, string message, ILogger logger, CancellationToken cancellationToken)
+        public static async Task TrySendNotificationTextMessageOrFileAsync(this Discord.WebSocket.DiscordSocketClient @this, Options.Discord options, string message, ILogger logger, CancellationToken cancellationToken)
         {
             logger.LogInformation($"Attempting to send notification message to {options.BotPrimaryGuildId}/{options.BotNotificationChannelId}");
             try
             {
-                _ = await @this.GetGuild(options.BotPrimaryGuildId).GetTextChannel(options.BotNotificationChannelId).SendMessageAsync(message, options: cancellationToken.ToRO());
+                Discord.WebSocket.SocketTextChannel channel = @this.GetGuild(options.BotPrimaryGuildId).GetTextChannel(options.BotNotificationChannelId);
+                if (message.Length > 2000)
+                {
+                    var fileStream = new MemoryStream(Encoding.UTF8.GetBytes(message.Trim().Trim('`')));
+                    _ = await channel.SendFileAsync(fileStream, "update.txt", "The background update was too long for a message, so it has been posted as a file.", options: cancellationToken.ToRO());
+                }
+                else
+                {
+                    _ = await channel.SendMessageAsync(message, options: cancellationToken.ToRO());
+                }
             }
             catch (Exception ex)
             {

@@ -106,7 +106,7 @@ namespace po.Services
 
             await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
             await this.RegisterSlashCommandsAsync(cancellationToken);
-            await this.discordClient.TrySendNotificationTextMessageAsync(this.options, $"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}", this.logger, cancellationToken);
+            await this.discordClient.TrySendNotificationTextMessageOrFileAsync(this.options, $"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}", this.logger, cancellationToken);
             this.sentinals.DiscordClient.SignalCompletion(this.discordClient);
 
             this.discordClient.Ready -= () => this.DiscordClient_Ready(cancellationToken);
@@ -135,7 +135,7 @@ namespace po.Services
                         }
                         else
                         {
-                            await this.discordClient.TrySendNotificationTextMessageAsync(this.options, $"Removed {slashCommandChannel}", this.logger, cancellationToken);
+                            await this.discordClient.TrySendNotificationTextMessageOrFileAsync(this.options, $"Removed {slashCommandChannel}", this.logger, cancellationToken);
                         }
                     }
                     slashCommand.EnabledChannels = channelsToKeep;

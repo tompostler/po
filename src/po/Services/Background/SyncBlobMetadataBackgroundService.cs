@@ -117,7 +117,7 @@ namespace po.Services.Background
                 _ = sb.AppendLine("```");
 
                 Discord.WebSocket.DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(cancellationToken);
-                await discordClient.TrySendNotificationTextMessageAsync(this.discordOptions, sb.ToString(), this.logger, cancellationToken);
+                await discordClient.TrySendNotificationTextMessageOrFileAsync(this.discordOptions, sb.ToString(), this.logger, cancellationToken);
             }
             else
             {
