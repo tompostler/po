@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using po.DataAccess;
 using po.Models;
 using System;
@@ -17,16 +18,16 @@ namespace po.DiscordImpl.SlashCommands
     {
         private readonly IServiceProvider serviceProvider;
         private readonly PoStorage poStorage;
-        private readonly Services.Background.SyncBlobMetadataBackgroundService syncBlobMetadataBackgroundService;
+        private readonly ILogger<PoConfigure> logger;
 
         public PoConfigure(
             IServiceProvider serviceProvider,
             PoStorage poStorage,
-            Services.Background.SyncBlobMetadataBackgroundService syncBlobMetadataBackgroundService)
+            ILogger<PoConfigure> logger)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poStorage;
-            this.syncBlobMetadataBackgroundService = syncBlobMetadataBackgroundService;
+            this.logger = logger;
         }
 
         public override SlashCommand ExpectedCommand => new()
@@ -111,7 +112,7 @@ namespace po.DiscordImpl.SlashCommands
             else if (operation == "rescan")
             {
                 await payload.DeferAsync();
-                string response = await this.syncBlobMetadataBackgroundService.InnerExecuteOnceAsync(new(), CancellationToken.None, containerName: command.RegistrationData);
+                string response = await Services.Background.SyncBlobMetadataBackgroundService.InnerExecuteOnceAsync(this.serviceProvider, this.poStorage, this.logger, new(), CancellationToken.None, containerName: command.RegistrationData);
 
                 if (response?.Length > 2000)
                 {
