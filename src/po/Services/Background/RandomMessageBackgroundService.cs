@@ -72,6 +72,9 @@ namespace po.Services.Background
 
                             _ = poContext.RandomMessages.Remove(randomMessage);
                             _ = await poContext.SaveChangesAsync(stoppingToken);
+
+                            // Reset the delay
+                            delay = TimeSpan.Zero;
                         }
                         else
                         {
