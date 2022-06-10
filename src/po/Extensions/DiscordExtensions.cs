@@ -38,6 +38,20 @@ namespace po.Extensions
             }
         }
 
+        public static async Task SendTextMessageAsync(this Discord.WebSocket.DiscordSocketClient @this, ulong channelId, string message, ILogger logger, CancellationToken cancellationToken)
+        {
+            logger.LogInformation($"Attempting to send notification message to {channelId}");
+            var channel = await @this.GetChannelAsync(channelId, cancellationToken.ToRO()) as Discord.WebSocket.SocketTextChannel;
+            _ = await channel.SendMessageAsync(message, options: cancellationToken.ToRO());
+        }
+
+        public static async Task SendTextMessageAsync(this Discord.WebSocket.DiscordSocketClient @this, ulong channelId, string message, Embed embed, ILogger logger, CancellationToken cancellationToken)
+        {
+            logger.LogInformation($"Attempting to send notification message to {channelId}");
+            var channel = await @this.GetChannelAsync(channelId, cancellationToken.ToRO()) as Discord.WebSocket.SocketTextChannel;
+            _ = await channel.SendMessageAsync(message, embed: embed, options: cancellationToken.ToRO());
+        }
+
         public static async Task SendSingleImageAsync(
             IServiceProvider serviceProvider,
             PoStorage poStorage,
