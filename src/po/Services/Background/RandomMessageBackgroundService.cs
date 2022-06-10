@@ -20,20 +20,17 @@ namespace po.Services.Background
     public sealed class RandomMessageBackgroundService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoStorage poStorage;
         private readonly Sentinals sentinals;
         private readonly ILogger<RandomMessageBackgroundService> logger;
         private readonly TelemetryClient telemetryClient;
 
         public RandomMessageBackgroundService(
             IServiceProvider serviceProvider,
-            PoStorage poStorage,
             Sentinals sentinals,
             ILogger<RandomMessageBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
-            this.poStorage = poStorage;
             this.sentinals = sentinals;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
@@ -58,9 +55,21 @@ namespace po.Services.Background
                         {
                             DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
 
+                            Color? color = default;
+                            if (randomMessage.Message.Contains("not successful") || randomMessage.Message.Contains("unsuccessful"))
+                            {
+                                color = Color.Red;
+                            }
+                            else if (randomMessage.Message.Contains("successful"))
+                            {
+                                color = Color.Green;
+                            }
+
                             EmbedBuilder embedBuilder = new()
                             {
-                                Description = $"Random message {randomMessage.Id}\nCreated {randomMessage.CreatedDate:u}",
+                                Color = color,
+                                Title = $"Random message {randomMessage.Id}",
+                                Timestamp = randomMessage.CreatedDate
                             };
 
                             await discordClient.SendTextMessageAsync(
