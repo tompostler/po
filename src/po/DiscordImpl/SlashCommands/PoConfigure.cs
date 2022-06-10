@@ -5,7 +5,10 @@ using Microsoft.Extensions.DependencyInjection;
 using po.DataAccess;
 using po.Models;
 using System;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace po.DiscordImpl.SlashCommands
@@ -14,19 +17,22 @@ namespace po.DiscordImpl.SlashCommands
     {
         private readonly IServiceProvider serviceProvider;
         private readonly PoStorage poStorage;
+        private readonly Services.Background.SyncBlobMetadataBackgroundService syncBlobMetadataBackgroundService;
 
         public PoConfigure(
             IServiceProvider serviceProvider,
-            PoStorage poStorage)
+            PoStorage poStorage,
+            Services.Background.SyncBlobMetadataBackgroundService syncBlobMetadataBackgroundService)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poStorage;
+            this.syncBlobMetadataBackgroundService = syncBlobMetadataBackgroundService;
         }
 
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "po-configure",
-            Version = 1,
+            Version = 2,
             IsGuildLevel = true
         };
 
@@ -47,6 +53,11 @@ namespace po.DiscordImpl.SlashCommands
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("disassociate")
                 .WithDescription("Disassociates the currently associated blob container from this channel.")
+                .WithType(ApplicationCommandOptionType.SubCommand)
+            )
+            .AddOption(new SlashCommandOptionBuilder()
+                .WithName("rescan")
+                .WithDescription("For a currently associated container, rescan its contents.")
                 .WithType(ApplicationCommandOptionType.SubCommand)
             )
             .Build();
@@ -86,23 +97,31 @@ namespace po.DiscordImpl.SlashCommands
                     await payload.RespondAsync($"Container `{containerName}` associated with this channel successfully.");
                 }
             }
+            else if (string.IsNullOrWhiteSpace(command?.RegistrationData))
+            {
+                await payload.RespondAsync($"This channel is not associated with any containers, and needs to be for any further commands to perform an action (such as {operation}). Try `/po-configure associate <container-name>`.");
+            }
             else if (operation == "disassociate")
             {
-                if (string.IsNullOrWhiteSpace(command?.RegistrationData))
+                string oldContainerName = command.RegistrationData;
+                command.RegistrationData = null;
+                _ = await poContext.SaveChangesAsync();
+                await payload.RespondAsync($"Channel successfully disassociated with container `{oldContainerName}`.");
+            }
+            else if (operation == "rescan")
+            {
+                await payload.DeferAsync();
+                string response = await this.syncBlobMetadataBackgroundService.InnerExecuteOnceAsync(new(), CancellationToken.None, containerName: command.RegistrationData);
+
+                if (response?.Length > 2000)
                 {
-                    await payload.RespondAsync("This channel is already not associated with any containers.");
+                    var fileStream = new MemoryStream(Encoding.UTF8.GetBytes(response.Trim().Trim('`')));
+                    _ = await payload.FollowupWithFileAsync(fileStream, "update.txt", "The rescan was too long for a message:");
                 }
                 else
                 {
-                    string oldContainerName = command.RegistrationData;
-                    command.RegistrationData = null;
-                    _ = await poContext.SaveChangesAsync();
-                    await payload.RespondAsync($"Channel successfully disassociated with container `{oldContainerName}`.");
+                    _ = await payload.FollowupAsync(response ?? "No updates.");
                 }
-            }
-            else if (string.IsNullOrWhiteSpace(command?.RegistrationData))
-            {
-                await payload.RespondAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.");
             }
             else
             {

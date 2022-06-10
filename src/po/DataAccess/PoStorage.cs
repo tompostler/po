@@ -32,28 +32,36 @@ namespace po.DataAccess
             await foreach (BlobContainerItem container in this.blobServiceClient.GetBlobContainersAsync(cancellationToken: cancellationToken))
             {
                 countContainers++;
-                uint countBlobs = 0;
-                BlobContainerClient blobContainerClient = this.blobServiceClient.GetBlobContainerClient(container.Name);
-                await foreach (BlobItem blob in blobContainerClient.GetBlobsAsync(cancellationToken: cancellationToken))
+                await foreach (Models.PoBlob blob in this.EnumerateAllBlobsAsync(container.Name, cancellationToken))
                 {
-                    countBlobs++;
-                    yield return new Models.PoBlob
-                    {
-                        AccountName = this.blobServiceClient.AccountName,
-                        ContainerName = container.Name,
-                        Name = blob.Name,
-                        Category = blob.Name.Split('/', StringSplitOptions.RemoveEmptyEntries).First(),
-                        CreatedOn = blob.Properties.CreatedOn.Value,
-                        LastModified = blob.Properties.LastModified.Value,
-                        LastSeen = DateTimeOffset.UtcNow,
-                        ContentLength = blob.Properties.ContentLength.Value,
-                        ContentHash = blob.Properties.ContentHash?.Length > 0 ? BitConverter.ToString(blob.Properties.ContentHash).Replace("-", "").ToLower() : null
-                    };
+                    countTotalBlobs++;
+                    yield return blob;
                 }
-                countTotalBlobs += countBlobs;
-                this.logger.LogInformation($"Enumerated {countBlobs} blobs in {blobContainerClient.Uri}");
             }
             this.logger.LogInformation($"Enumerated {countTotalBlobs} blobs in {countContainers} in {this.blobServiceClient.Uri}");
+        }
+
+        public async IAsyncEnumerable<Models.PoBlob> EnumerateAllBlobsAsync(string containerName, [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            uint countBlobs = 0;
+            BlobContainerClient blobContainerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
+            await foreach (BlobItem blob in blobContainerClient.GetBlobsAsync(cancellationToken: cancellationToken))
+            {
+                countBlobs++;
+                yield return new Models.PoBlob
+                {
+                    AccountName = this.blobServiceClient.AccountName,
+                    ContainerName = blobContainerClient.Name,
+                    Name = blob.Name,
+                    Category = blob.Name.Split('/', StringSplitOptions.RemoveEmptyEntries).First(),
+                    CreatedOn = blob.Properties.CreatedOn.Value,
+                    LastModified = blob.Properties.LastModified.Value,
+                    LastSeen = DateTimeOffset.UtcNow,
+                    ContentLength = blob.Properties.ContentLength.Value,
+                    ContentHash = blob.Properties.ContentHash?.Length > 0 ? BitConverter.ToString(blob.Properties.ContentHash).Replace("-", "").ToLower() : null
+                };
+            }
+            this.logger.LogInformation($"Enumerated {countBlobs} blobs in {blobContainerClient.Uri}");
         }
 
         public async Task<bool> ContainerExistsAsync(string containerName)

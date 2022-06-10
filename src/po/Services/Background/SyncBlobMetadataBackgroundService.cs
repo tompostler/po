@@ -17,6 +17,8 @@ namespace po.Services.Background
 {
     public sealed class SyncBlobMetadataBackgroundService : SqlSynchronizedBackgroundService
     {
+        private const int BatchSize = 100;
+
         private readonly PoStorage storage;
         private readonly Options.Discord discordOptions;
 
@@ -35,8 +37,7 @@ namespace po.Services.Background
 
         protected override TimeSpan Interval => TimeSpan.FromDays(1);
 
-        private readonly Dictionary<string, CountValue> Counts = new();
-        private sealed class CountValue
+        public sealed class CountValue
         {
             public uint Added;
             public uint Removed;
@@ -45,26 +46,8 @@ namespace po.Services.Background
 
         protected override async Task ExecuteOnceAsync(CancellationToken cancellationToken)
         {
-            const int batchSize = 100;
-
-            List<Models.PoBlob> foundBlobs = new(batchSize);
-            this.Counts.Clear();
-
-            // Add new ones
-            await foreach (Models.PoBlob foundBlob in this.storage.EnumerateAllBlobsAsync(cancellationToken))
-            {
-                foundBlobs.Add(foundBlob);
-
-                if (foundBlobs.Count >= batchSize)
-                {
-                    await this.ReconcileFoundBlobsInBatchAsync(foundBlobs, cancellationToken);
-                    foundBlobs.Clear();
-                }
-            }
-            if (foundBlobs.Count > 0)
-            {
-                await this.ReconcileFoundBlobsInBatchAsync(foundBlobs, cancellationToken);
-            }
+            Dictionary<string, CountValue> counts = new();
+            string report = await this.InnerExecuteOnceAsync(counts, cancellationToken);
 
             // Remove any that we haven't seen for more than 3 scrape intervals
             DateTimeOffset tooOld = DateTimeOffset.UtcNow.AddDays(this.Interval.TotalDays * -3);
@@ -73,10 +56,10 @@ namespace po.Services.Background
             {
                 List<Models.PoBlob> toDeletes = await poContext.Blobs.Where(x => x.LastSeen < tooOld).ToListAsync(cancellationToken);
 
-                if (toDeletes.Count > batchSize)
+                if (toDeletes.Count > BatchSize)
                 {
-                    this.logger.LogWarning($"Found {toDeletes.Count} old blobs to remove. Only removing {batchSize} to avoid SQL timeout.");
-                    toDeletes = toDeletes.Take(batchSize).ToList();
+                    this.logger.LogWarning($"Found {toDeletes.Count} old blobs to remove. Only removing {BatchSize} to avoid SQL timeout.");
+                    toDeletes = toDeletes.Take(BatchSize).ToList();
                 }
                 if (toDeletes.Count > 0)
                 {
@@ -89,43 +72,72 @@ namespace po.Services.Background
 
                 foreach (Models.PoBlob toDelete in toDeletes)
                 {
-                    if (!this.Counts.ContainsKey(toDelete.Category))
+                    if (!counts.ContainsKey(toDelete.Category))
                     {
-                        this.Counts.Add(toDelete.Category, new CountValue());
+                        counts.Add(toDelete.Category, new CountValue());
                     }
-                    this.Counts[toDelete.Category].Removed++;
+                    counts[toDelete.Category].Removed++;
                     _ = poContext.Blobs.Remove(toDelete);
                 }
 
                 _ = await poContext.SaveChangesAsync(cancellationToken);
             }
 
-            // Report on what we did
-            if (this.Counts.Values.Any(x => x.Added > 0 || x.Removed > 0))
+            if (report != default)
             {
-                int catLen = Math.Max("category".Length, this.Counts.Keys.Max(x => x.Length));
+                Discord.WebSocket.DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(cancellationToken);
+                await discordClient.TrySendNotificationTextMessageOrFileAsync(this.discordOptions, report, this.logger, cancellationToken);
+            }
+        }
+
+        public async Task<string> InnerExecuteOnceAsync(Dictionary<string, CountValue> counts, CancellationToken cancellationToken, string containerName = default)
+        {
+            List<Models.PoBlob> foundBlobs = new(BatchSize);
+
+            // Add new ones
+            IAsyncEnumerable<Models.PoBlob> enumerable = containerName == default
+                                                        ? this.storage.EnumerateAllBlobsAsync(cancellationToken)
+                                                        : this.storage.EnumerateAllBlobsAsync(containerName, cancellationToken);
+            await foreach (Models.PoBlob foundBlob in enumerable)
+            {
+                foundBlobs.Add(foundBlob);
+
+                if (foundBlobs.Count >= BatchSize)
+                {
+                    await this.ReconcileFoundBlobsInBatchAsync(foundBlobs, counts, cancellationToken);
+                    foundBlobs.Clear();
+                }
+            }
+            if (foundBlobs.Count > 0)
+            {
+                await this.ReconcileFoundBlobsInBatchAsync(foundBlobs, counts, cancellationToken);
+            }
+
+            // Report on what we did
+            if (counts.Values.Any(x => x.Added > 0 || x.Removed > 0))
+            {
+                int catLen = Math.Max("category".Length, counts.Keys.Max(x => x.Length));
                 int numLen = "removed".Length;
                 StringBuilder sb = new();
                 _ = sb.AppendLine("```");
                 _ = sb.AppendLine($"{"CATEGORY".PadRight(catLen)}  {"ADDED".PadLeft(numLen)}  {"REMOVED".PadLeft(numLen)}  {"TOTAL".PadLeft(numLen)}");
                 _ = sb.AppendLine($"{new string('=', catLen)}  {new string('=', numLen)}  {new string('=', numLen)}  {new string('=', numLen)}");
-                foreach (KeyValuePair<string, CountValue> count in this.Counts.Where(x => x.Value.Added > 0 || x.Value.Removed > 0))
+                foreach (KeyValuePair<string, CountValue> count in counts.Where(x => x.Value.Added > 0 || x.Value.Removed > 0))
                 {
                     _ = sb.AppendLine($"{count.Key.PadRight(catLen)}  {count.Value.Added.ToString().PadLeft(numLen)}  {count.Value.Removed.ToString().PadLeft(numLen)}  {count.Value.Total.ToString().PadLeft(numLen)}");
                 }
-                _ = sb.AppendLine($"{"TOTAL".PadRight(catLen)}  {this.Counts.Values.Sum(x => x.Added).ToString().PadLeft(numLen)}  {this.Counts.Values.Sum(x => x.Removed).ToString().PadLeft(numLen)}  {this.Counts.Values.Sum(x => x.Total).ToString().PadLeft(numLen)}");
+                _ = sb.AppendLine($"{"TOTAL".PadRight(catLen)}  {counts.Values.Sum(x => x.Added).ToString().PadLeft(numLen)}  {counts.Values.Sum(x => x.Removed).ToString().PadLeft(numLen)}  {counts.Values.Sum(x => x.Total).ToString().PadLeft(numLen)}");
                 _ = sb.AppendLine("```");
-
-                Discord.WebSocket.DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(cancellationToken);
-                await discordClient.TrySendNotificationTextMessageOrFileAsync(this.discordOptions, sb.ToString(), this.logger, cancellationToken);
+                return sb.ToString();
             }
             else
             {
                 this.logger.LogInformation("Nothing new to report.");
+                return default;
             }
         }
 
-        private async Task ReconcileFoundBlobsInBatchAsync(List<Models.PoBlob> foundBlobs, CancellationToken cancellationToken)
+        private async Task ReconcileFoundBlobsInBatchAsync(List<Models.PoBlob> foundBlobs, Dictionary<string, CountValue> counts, CancellationToken cancellationToken)
         {
             using (IServiceScope scope = this.serviceProvider.CreateScope())
             using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
@@ -133,20 +145,20 @@ namespace po.Services.Background
                 foreach (Models.PoBlob foundBlob in foundBlobs)
                 {
                     Models.PoBlob existingBlob = await poContext.Blobs.SingleOrDefaultAsync(x => x.AccountName == foundBlob.AccountName && x.ContainerName == foundBlob.ContainerName && x.Name == foundBlob.Name, cancellationToken);
-                    if (!this.Counts.ContainsKey(foundBlob.Category))
+                    if (!counts.ContainsKey(foundBlob.Category))
                     {
-                        this.Counts.Add(foundBlob.Category, new CountValue());
+                        counts.Add(foundBlob.Category, new CountValue());
                     }
                     if (existingBlob == default)
                     {
-                        this.Counts[foundBlob.Category].Added++;
+                        counts[foundBlob.Category].Added++;
                         _ = poContext.Blobs.Add(foundBlob);
                     }
                     else
                     {
                         existingBlob.CopyFrom(foundBlob);
                     }
-                    this.Counts[foundBlob.Category].Total++;
+                    counts[foundBlob.Category].Total++;
                 }
 
                 _ = await poContext.SaveChangesAsync(cancellationToken);
