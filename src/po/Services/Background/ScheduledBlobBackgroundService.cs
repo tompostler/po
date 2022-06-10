@@ -63,6 +63,7 @@ namespace po.Services.Background
                             await DiscordExtensions.SendSingleImageAsync(
                                 this.serviceProvider,
                                 this.poStorage,
+                                nextScheduledBlob.ContainerName,
                                 nextScheduledBlob.Category,
                                 nextScheduledBlob.Username,
                                 (message) => channel.SendMessageAsync(message),

@@ -41,6 +41,7 @@ namespace po.Extensions
         public static async Task SendSingleImageAsync(
             IServiceProvider serviceProvider,
             PoStorage poStorage,
+            string containerName,
             string category,
             string username,
             Func<string, Task> textMessageResponse,
@@ -50,7 +51,7 @@ namespace po.Extensions
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
 
             Models.PoBlob blob = await poContext.Blobs
-                            .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                            .Where(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
                             .OrderBy(x => Guid.NewGuid())
                             .FirstOrDefaultAsync();
 
@@ -61,7 +62,7 @@ namespace po.Extensions
             else
             {
                 var counts = await poContext.Blobs
-                            .Where(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                            .Where(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
                             .GroupBy(x => x.Category)
                             .Select(g => new
                             {

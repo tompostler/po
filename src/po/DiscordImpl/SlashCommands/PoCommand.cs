@@ -139,13 +139,14 @@ namespace po.DiscordImpl.SlashCommands
                     break;
 
                 case "reset":
-                    await HandleResetAsync(payload, category, poContext);
+                    await HandleResetAsync(payload, command, category, poContext);
                     break;
 
                 case "show":
                     await DiscordExtensions.SendSingleImageAsync(
                         this.serviceProvider,
                         this.poStorage,
+                        command.RegistrationData,
                         category,
                         payload.User.Username,
                         (message) => payload.RespondAsync(message),
@@ -168,7 +169,6 @@ namespace po.DiscordImpl.SlashCommands
 
         private async Task HandleRandomAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
         {
-
             string errorMessage = default;
 
             long? countRequested = (long?)payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "count")?.Value;
@@ -230,10 +230,11 @@ namespace po.DiscordImpl.SlashCommands
                 _ = poContext.ScheduledBlobs.Add(
                     new ScheduledBlob
                     {
-                        Category = category,
+                        ContainerName = command.RegistrationData,
                         ChannelId = command.ChannelId,
+                        Category = category,
+                        Username = payload.User.Username + $", random {i + 1}/{delays.Length}",
                         ScheduledDate = DateTimeOffset.UtcNow.Add(delays[i]),
-                        Username = payload.User.Username + $", random {i + 1}/{delays.Length}"
                     });
             }
             _ = await poContext.SaveChangesAsync();
@@ -241,12 +242,12 @@ namespace po.DiscordImpl.SlashCommands
             _ = await payload.FollowupAsync($"Scheduled {countRequested} images randomly over the next {duration.parsed}.");
         }
 
-        private static async Task HandleResetAsync(SocketSlashCommand payload, string category, PoContext poContext)
+        private static async Task HandleResetAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
         {
             await payload.DeferAsync();
 
             List<string> categoriesToReset = await poContext.Blobs
-                        .Where(x => x.Category.StartsWith(category ?? string.Empty) && x.Seen)
+                        .Where(x => x.ContainerName == command.RegistrationData && x.Category.StartsWith(category ?? string.Empty) && x.Seen)
                         .GroupBy(x => x.Category)
                         .Select(g => g.Key)
                         .ToListAsync();
@@ -381,10 +382,11 @@ namespace po.DiscordImpl.SlashCommands
                 _ = poContext.ScheduledBlobs.Add(
                     new ScheduledBlob
                     {
-                        Category = category,
+                        ContainerName = command.RegistrationData,
                         ChannelId = command.ChannelId,
+                        Category = category,
+                        Username = payload.User.Username + $", timer {i + 1}/{countRequested}",
                         ScheduledDate = DateTimeOffset.UtcNow.AddSeconds(interval.parsed.TotalSeconds * i),
-                        Username = payload.User.Username + $", timer {i + 1}/{countRequested}"
                     });
             }
             _ = await poContext.SaveChangesAsync();

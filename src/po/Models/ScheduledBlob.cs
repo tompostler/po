@@ -10,6 +10,10 @@ namespace po.Models
         public long Id { get; set; }
 
         [Required]
+        [MaxLength(64)]
+        public string ContainerName { get; set; }
+
+        [Required]
         public ulong ChannelId { get; set; }
 
         [MaxLength(32)]
