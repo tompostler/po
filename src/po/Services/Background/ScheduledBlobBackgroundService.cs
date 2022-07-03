@@ -10,6 +10,7 @@ using po.DataAccess;
 using po.Extensions;
 using po.Utilities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,14 +52,22 @@ namespace po.Services.Background
                     using (IServiceScope scope = this.serviceProvider.CreateScope())
                     using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                     {
-                        Models.ScheduledBlob nextScheduledBlob = await poContext.ScheduledBlobs
+                        List<Models.ScheduledBlob> nextScheduledBlobs = await poContext.ScheduledBlobs
                                                                     .OrderBy(x => x.ScheduledDate)
-                                                                    .FirstOrDefaultAsync(stoppingToken);
+                                                                    .Take(2)
+                                                                    .ToListAsync(stoppingToken);
+                        Models.ScheduledBlob nextScheduledBlob = nextScheduledBlobs.FirstOrDefault();
 
                         if (nextScheduledBlob?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
                             DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
                             var channel = discordClient.GetChannel(nextScheduledBlob.ChannelId) as SocketTextChannel;
+
+                            TimeSpan? nextImageIn = default;
+                            if (nextScheduledBlobs.Count == 2)
+                            {
+                                nextImageIn = nextScheduledBlobs.Last().ScheduledDate - nextScheduledBlob.ScheduledDate;
+                            }
 
                             await DiscordExtensions.SendSingleImageAsync(
                                 this.serviceProvider,
@@ -67,7 +76,8 @@ namespace po.Services.Background
                                 nextScheduledBlob.Category,
                                 nextScheduledBlob.Username,
                                 (message) => channel.SendMessageAsync(message),
-                                (embed) => channel.SendMessageAsync(embed: embed));
+                                (embed) => channel.SendMessageAsync(embed: embed),
+                                nextImageIn);
 
                             _ = poContext.ScheduledBlobs.Remove(nextScheduledBlob);
                             _ = await poContext.SaveChangesAsync(stoppingToken);

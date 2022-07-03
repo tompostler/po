@@ -59,7 +59,8 @@ namespace po.Extensions
             string category,
             string username,
             Func<string, Task> textMessageResponse,
-            Func<Embed, Task> embedMessageResponse)
+            Func<Embed, Task> embedMessageResponse,
+            TimeSpan? nextImageIn = default)
         {
             using IServiceScope scope = serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
@@ -86,10 +87,26 @@ namespace po.Extensions
                             .ToListAsync();
                 double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
 
+                string nextImageInText = string.Empty;
+                if (nextImageIn != default)
+                {
+                    nextImageInText = "\nNext image in ";
+                    if (nextImageIn.Value.TotalHours > 1)
+                    {
+                        nextImageInText += nextImageIn.Value.TotalHours.ToString("0.0");
+                        nextImageInText += 'h';
+                    }
+                    else
+                    {
+                        nextImageInText += nextImageIn.Value.TotalMinutes.ToString("0.0");
+                        nextImageInText += 'm';
+                    }
+                }
+
                 var builder = new EmbedBuilder()
                 {
                     Title = blob.Name,
-                    Description = $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}",
+                    Description = $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}{nextImageInText}",
                     ImageUrl = poStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
                 };
                 await embedMessageResponse(builder.Build());
