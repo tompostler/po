@@ -31,13 +31,13 @@
     },
     "siteName": {
       "type": "string",
-      "defaultValue": "po-tcp-wtf"
+      "defaultValue": "po-tcpwtf"
     }
   },
   "variables": {
     "sqlConnectionString": "[concat('Server=tcp:', parameters('sqlServerName'), environment().suffixes.sqlServerHostname, ',1433;Initial Catalog=', parameters('sqlDatabaseName'), ';Persist Security Info=False;User ID=', parameters('sqlAdminUsername'), ';Password=', parameters('sqlAdminPassword'), ';MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]",
     "storageAccountName": "[replace(parameters('siteName'), '-', '')]",
-    "storageAccountId": "[resourceId(parameters('siteName'), 'Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
   },
   "resources": [
     {
