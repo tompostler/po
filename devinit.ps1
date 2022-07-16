@@ -1,5 +1,5 @@
 Write-Host -ForegroundColor Cyan 'Logging in to subscription....';
-$subscriptionId = 'b12eec98-4290-4ba5-ae5e-c01d4c83db72';
+$subscriptionId = '18fac277-c9ad-4c2d-8172-bd41083dae75';
 $context = Get-AzContext;
 if ($null -eq $context) {
     Login-AzAccount -SubscriptionId $subscriptionId;
@@ -27,7 +27,7 @@ $localSettings = [PSCustomObject]@{
     Storage = [PSCustomObject]@{
         ConnectionString = (
             'DefaultEndpointsProtocol=https;AccountName=potcpwtf;AccountKey=' `
-                + ((Get-AzStorageAccountKey -ResourceGroupName po-tcp-wtf -Name potcpwtf)[1].Value) `
+                + ((Get-AzStorageAccountKey -ResourceGroupName tcp-wtf-hosting -Name potcpwtf)[1].Value) `
                 + ';EndpointSuffix=core.windows.net');
     };
 };
