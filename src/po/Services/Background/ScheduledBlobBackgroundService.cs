@@ -43,10 +43,10 @@ namespace po.Services.Background
         {
             await this.sentinals.DBMigration.WaitForCompletionAsync(stoppingToken);
 
+            var delay = TimeSpan.FromMinutes(1);
             while (!stoppingToken.IsCancellationRequested)
             {
                 using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>(this.GetType().FullName);
-                var delay = TimeSpan.FromMinutes(5);
                 try
                 {
                     using (IServiceScope scope = this.serviceProvider.CreateScope())
@@ -81,13 +81,25 @@ namespace po.Services.Background
 
                             _ = poContext.ScheduledBlobs.Remove(nextScheduledBlob);
                             _ = await poContext.SaveChangesAsync(stoppingToken);
+
+                            // Reset the delay to one minute
+                            delay = TimeSpan.FromMinutes(1);
                         }
                         else if (nextScheduledBlob != default)
                         {
-                            delay = nextScheduledBlob.ScheduledDate.Subtract(DateTimeOffset.UtcNow);
+                            // If there's no current image to show, let the delay be 75% of the time to the next image
+                            delay = nextScheduledBlob.ScheduledDate.Subtract(DateTimeOffset.UtcNow) * .75;
+                        }
+                        else
+                        {
+                            // There was no image to show or scheduled, so just double the delay for exponential backoff
+                            delay *= 2;
                         }
                     }
-                    delay = TimeSpan.FromMinutes(Math.Max(1, delay.TotalMinutes / 2));
+                    // The delay should be at least 1 minute
+                    delay = TimeSpan.FromMinutes(Math.Max(1, delay.TotalMinutes));
+                    // But less than an hour
+                    delay = TimeSpan.FromHours(Math.Min(1, delay.TotalHours));
                 }
                 catch (Exception ex)
                 {

@@ -93,8 +93,8 @@ namespace po.Services.Background
                     }
                     // The delay should be at least 1 minute
                     delay = TimeSpan.FromMinutes(Math.Max(1, delay.TotalMinutes));
-                    // but less than int.MaxValue milliseconds
-                    delay = TimeSpan.FromMilliseconds(Math.Min(int.MaxValue - 1, delay.TotalMilliseconds));
+                    // but less than an hour
+                    delay = TimeSpan.FromHours(Math.Min(1, delay.TotalHours));
                 }
                 catch (Exception ex)
                 {
