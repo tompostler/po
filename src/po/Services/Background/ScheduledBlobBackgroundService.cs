@@ -46,7 +46,7 @@ namespace po.Services.Background
             while (!stoppingToken.IsCancellationRequested)
             {
                 using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>(this.GetType().FullName);
-                var delay = TimeSpan.FromMinutes(1);
+                var delay = TimeSpan.FromMinutes(5);
                 try
                 {
                     using (IServiceScope scope = this.serviceProvider.CreateScope())
