@@ -13,8 +13,12 @@ namespace po.Models
         public ulong ChannelId { get; set; }
 
         [Required]
-        [MaxLength(2000)]
-        public string Message { get; set; }
+        [MaxLength(256)]
+        public string Title { get; set; }
+
+        [Required]
+        [MaxLength(4096)]
+        public string Description { get; set; }
 
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTimeOffset CreatedDate { get; set; }

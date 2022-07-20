@@ -55,15 +55,12 @@ namespace po.Services.Background
                         {
                             DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
 
-                            string[] lines = randomMessage.Message.Split('\n');
-                            string firstLine = lines.First().Trim();
-
                             Color? color = default;
-                            if (firstLine.Contains("not successful") || firstLine.Contains("unsuccessful"))
+                            if (randomMessage.Title.Contains("not successful") || randomMessage.Title.Contains("unsuccessful"))
                             {
                                 color = Color.Red;
                             }
-                            else if (firstLine.Contains("successful"))
+                            else if (randomMessage.Title.Contains("successful"))
                             {
                                 color = Color.Green;
                             }
@@ -71,14 +68,14 @@ namespace po.Services.Background
                             EmbedBuilder embedBuilder = new()
                             {
                                 Color = color,
-                                Description = (randomMessage.Message.Substring(lines.First().Length) + $"\nRandom message {randomMessage.Id}").Trim(),
-                                Title = firstLine,
+                                Description = (randomMessage.Description + $"\nRandom message {randomMessage.Id}").Trim(),
+                                Title = randomMessage.Title,
                                 Timestamp = randomMessage.CreatedDate
                             };
 
                             await discordClient.SendTextMessageAsync(
                                 randomMessage.ChannelId,
-                                randomMessage.Message,
+                                $"{embedBuilder.Title}\n{embedBuilder.Description}",
                                 embedBuilder.Build(),
                                 this.logger,
                                 stoppingToken);
