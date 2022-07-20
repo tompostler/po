@@ -55,12 +55,15 @@ namespace po.Services.Background
                         {
                             DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
 
+                            string[] lines = randomMessage.Message.Split('\n');
+                            string firstLine = lines.First().Trim();
+
                             Color? color = default;
-                            if (randomMessage.Message.Contains("not successful") || randomMessage.Message.Contains("unsuccessful"))
+                            if (firstLine.Contains("not successful") || firstLine.Contains("unsuccessful"))
                             {
                                 color = Color.Red;
                             }
-                            else if (randomMessage.Message.Contains("successful"))
+                            else if (firstLine.Contains("successful"))
                             {
                                 color = Color.Green;
                             }
@@ -68,7 +71,8 @@ namespace po.Services.Background
                             EmbedBuilder embedBuilder = new()
                             {
                                 Color = color,
-                                Title = $"Random message {randomMessage.Id}",
+                                Description = (randomMessage.Message.Substring(lines.First().Length) + $"\nRandom message {randomMessage.Id}").Trim(),
+                                Title = firstLine,
                                 Timestamp = randomMessage.CreatedDate
                             };
 
