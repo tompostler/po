@@ -68,7 +68,7 @@ namespace po.Services.Background
                             EmbedBuilder embedBuilder = new()
                             {
                                 Color = color,
-                                Description = (randomMessage.Description + $"\nRandom message {randomMessage.Id}").Trim(),
+                                Description = (randomMessage.Description + $"\n\n(random message {randomMessage.Id})").Trim(),
                                 Title = randomMessage.Title,
                                 Timestamp = randomMessage.CreatedDate
                             };
