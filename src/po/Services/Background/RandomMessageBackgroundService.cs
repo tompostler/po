@@ -73,9 +73,8 @@ namespace po.Services.Background
                                 Timestamp = randomMessage.CreatedDate
                             };
 
-                            await discordClient.SendTextMessageAsync(
+                            await discordClient.SendEmbedMessageAsync(
                                 randomMessage.ChannelId,
-                                $"{embedBuilder.Title}\n{embedBuilder.Description}",
                                 embedBuilder.Build(),
                                 this.logger,
                                 stoppingToken);
