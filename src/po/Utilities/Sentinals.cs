@@ -28,11 +28,15 @@ namespace po.Utilities
             public bool IsReady => this.semaphore.CurrentCount > 0;
             /// <summary>
             /// Await this if you need to wait for the sentinal.
+            /// If the cancellation token is cancelled, then what you were waiting for will not be ready.
             /// </summary>
             public async Task WaitForCompletionAsync(CancellationToken cancellationToken)
             {
-                using CancellationTokenRegistration _ = cancellationToken.Register(() => this.semaphore.Release(1));
-                await this.task;
+                // Since we can't await a cancellation token directly, this will allow us to create a task that cancels if the cancellation token cancels
+                TaskCompletionSource waitTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                _ = cancellationToken.Register(() => waitTaskCompletionSource.TrySetCanceled(cancellationToken));
+
+                _ = await Task.WhenAny(this.task, waitTaskCompletionSource.Task);
             }
         }
 
@@ -64,9 +68,18 @@ namespace po.Utilities
             /// </summary>
             public async Task<T> WaitForCompletionAsync(CancellationToken cancellationToken)
             {
-                using CancellationTokenRegistration _ = cancellationToken.Register(() => this.semaphore.Release(1));
-                await this.task;
-                return this.waitingFor;
+                // Since we can't await a cancellation token directly, this will allow us to create a task that cancels if the cancellation token cancels
+                TaskCompletionSource waitTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                _ = cancellationToken.Register(() => waitTaskCompletionSource.TrySetCanceled(cancellationToken));
+
+                if (this.task == await Task.WhenAny(this.task, waitTaskCompletionSource.Task))
+                {
+                    return this.waitingFor;
+                }
+                else
+                {
+                    return default;
+                }
             }
         }
     }
