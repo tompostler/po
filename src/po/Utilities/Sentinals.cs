@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace po.Utilities
@@ -36,7 +37,11 @@ namespace po.Utilities
                 TaskCompletionSource waitTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 _ = cancellationToken.Register(() => waitTaskCompletionSource.TrySetCanceled(cancellationToken));
 
-                _ = await Task.WhenAny(this.task, waitTaskCompletionSource.Task);
+                if (waitTaskCompletionSource.Task == await Task.WhenAny(this.task, waitTaskCompletionSource.Task))
+                {
+                    // The cancellation token fired
+                    throw new OperationCanceledException(cancellationToken);
+                }
             }
         }
 
@@ -78,7 +83,8 @@ namespace po.Utilities
                 }
                 else
                 {
-                    return default;
+                    // The cancellation token fired
+                    throw new OperationCanceledException(cancellationToken);
                 }
             }
         }
