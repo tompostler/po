@@ -46,9 +46,9 @@ namespace po.Services.Background
         {
             await this.sentinals.DBMigration.WaitForCompletionAsync(stoppingToken);
 
-            var delay = TimeSpan.FromMinutes(1);
             while (!stoppingToken.IsCancellationRequested)
             {
+                var delay = TimeSpan.FromDays(1);
                 using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>(this.GetType().FullName);
                 try
                 {
@@ -84,19 +84,11 @@ namespace po.Services.Background
 
                             _ = poContext.ScheduledBlobs.Remove(nextScheduledBlob);
                             _ = await poContext.SaveChangesAsync(stoppingToken);
-
-                            // Reset the delay to one minute
-                            delay = TimeSpan.FromMinutes(1);
                         }
                         else if (nextScheduledBlob != default)
                         {
-                            // If there's no current image to show, let the delay be 75% of the time to the next image
-                            delay = nextScheduledBlob.ScheduledDate.Subtract(DateTimeOffset.UtcNow) * .75;
-                        }
-                        else
-                        {
-                            // There was no image to show or scheduled, so just double the delay for exponential backoff
-                            delay *= 2;
+                            // If there's no current image to show, let the delay be until the next image
+                            delay = nextScheduledBlob.ScheduledDate.Subtract(DateTimeOffset.UtcNow);
                         }
                     }
                     // The delay should be at least 1 minute
