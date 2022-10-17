@@ -25,10 +25,6 @@
     "sqlAdminPassword": {
       "type": "securestring"
     },
-    "planName": {
-      "type": "string",
-      "defaultValue": "[resourceGroup().name]"
-    },
     "siteName": {
       "type": "string",
       "defaultValue": "po-tcpwtf"
@@ -45,7 +41,7 @@
       "apiVersion": "2020-06-01",
       "name": "[concat(parameters('siteName'), '/appsettings')]",
       "properties": {
-        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(resourceId('Microsoft.Insights/components', parameters('planName')), '2020-02-02').ConnectionString]",
+        "APPLICATIONINSIGHTS_CONNECTION_STRING": "[reference(resourceId('Microsoft.Insights/components', parameters('siteName')), '2020-02-02').ConnectionString]",
         "Discord__BotPrimaryGuildId": "[parameters('discordBotPrimaryGuildId')]",
         "Discord__BotNotificationChannelId": "[parameters('discordBotNotificationChannelId')]",
         "Discord__BotToken": "[parameters('discordBotToken')]",
