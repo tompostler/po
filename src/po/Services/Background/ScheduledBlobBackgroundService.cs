@@ -21,6 +21,7 @@ namespace po.Services.Background
     {
         private readonly IServiceProvider serviceProvider;
         private readonly PoStorage poStorage;
+        private readonly Delays delays;
         private readonly Sentinals sentinals;
         private readonly ILogger<ScheduledBlobBackgroundService> logger;
         private readonly TelemetryClient telemetryClient;
@@ -28,12 +29,14 @@ namespace po.Services.Background
         public ScheduledBlobBackgroundService(
             IServiceProvider serviceProvider,
             PoStorage poStorage,
+            Delays delays,
             Sentinals sentinals,
             ILogger<ScheduledBlobBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poStorage;
+            this.delays = delays;
             this.sentinals = sentinals;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
@@ -107,7 +110,7 @@ namespace po.Services.Background
                 }
 
                 this.logger.LogInformation($"Sleeping {delay} until the next iteration.");
-                await Task.Delay(delay, stoppingToken);
+                await this.delays.ScheduledBlob.Delay(delay, stoppingToken);
             }
         }
     }

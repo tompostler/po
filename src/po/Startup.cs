@@ -39,6 +39,7 @@ namespace po
                           .EnableRetryOnFailure()));
             _ = services.AddSingleton<DataAccess.PoStorage>();
 
+            _ = services.AddSingleton<Utilities.Delays>();
             _ = services.AddSingleton<Utilities.Sentinals>();
 
             _ = services.AddHostedService<Services.BotService>();

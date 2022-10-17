@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using po.DataAccess;
 using po.Extensions;
 using po.Models;
+using po.Utilities;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,6 +20,7 @@ namespace po.DiscordImpl.SlashCommands
     {
         private readonly IServiceProvider serviceProvider;
         private readonly PoStorage poStorage;
+        private readonly Delays delays;
         private readonly ILogger<PoCommand> logger;
 
         private readonly Random random = new();
@@ -26,10 +28,12 @@ namespace po.DiscordImpl.SlashCommands
         public PoCommand(
             IServiceProvider serviceProvider,
             PoStorage poBlobStorage,
+            Delays delays,
             ILogger<PoCommand> logger)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poBlobStorage;
+            this.delays = delays;
             this.logger = logger;
         }
 
@@ -136,6 +140,7 @@ namespace po.DiscordImpl.SlashCommands
             {
                 case "random":
                     await this.HandleRandomAsync(payload, command, category, poContext);
+                    this.delays.ScheduledBlob.CancelDelay();
                     break;
 
                 case "reset":
@@ -159,6 +164,7 @@ namespace po.DiscordImpl.SlashCommands
 
                 case "timer":
                     await HandleTimerAsync(payload, command, category, poContext);
+                    this.delays.ScheduledBlob.CancelDelay();
                     break;
 
                 // Default behavior is to throw up
