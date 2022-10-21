@@ -49,8 +49,8 @@ namespace po.Services
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             this.discordClient = new DiscordSocketClient();
-            this.discordClient.Log += this.DiscordClientLog;
-            this.discordClient.MessageReceived += this.DiscordMessageReceived;
+            this.discordClient.Log += this.DiscordClient_Log;
+            this.discordClient.MessageReceived += this.DiscordClient_MessageReceived;
 
             string botToken = this.options.BotToken;
             this.logger.LogInformation($"Token is {botToken?.Length.ToString() ?? "<null>"} characters.");
@@ -62,7 +62,7 @@ namespace po.Services
             this.discordClient.SlashCommandExecuted += this.DiscordClient_SlashCommandExecuted;
         }
 
-        private Task DiscordClientLog(LogMessage arg)
+        private Task DiscordClient_Log(LogMessage arg)
         {
             LogLevel logLevel = arg.Severity switch
             {
@@ -80,7 +80,7 @@ namespace po.Services
             return Task.CompletedTask;
         }
 
-        private Task DiscordMessageReceived(SocketMessage message)
+        private Task DiscordClient_MessageReceived(SocketMessage message)
         {
             this.logger.LogInformation($"Message received: {message}");
 

@@ -49,7 +49,7 @@ namespace po.Services.Background
                     using (IServiceScope scope = this.serviceProvider.CreateScope())
                     using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                     {
-                        Models.RandomMessage randomMessage = await poContext.RandomMessages.FirstOrDefaultAsync(stoppingToken);
+                        Models.RandomMessage randomMessage = await poContext.RandomMessages.OrderBy(x => x.Id).FirstOrDefaultAsync(stoppingToken);
 
                         if (randomMessage != default)
                         {
