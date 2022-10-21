@@ -44,7 +44,8 @@ namespace po
 
             _ = services.AddHostedService<Services.BotService>();
             _ = services.AddHostedService<Services.MigrationService>();
-            
+            _ = services.AddHostedService<Services.RestartNotificationService>();
+
             _ = services.AddHostedService<Services.Background.CleanUpOldMessagesBackgroundService>();
             _ = services.AddHostedService<Services.Background.RandomMessageBackgroundService>();
             _ = services.AddHostedService<Services.Background.ScheduledBlobBackgroundService>();
