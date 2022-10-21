@@ -102,7 +102,7 @@ namespace po.Services.Background
                 }
 
                 this.logger.LogInformation($"Sleeping {delay} until the next iteration.");
-                await this.delays.ScheduledBlob.Delay(delay, stoppingToken);
+                await this.delays.ScheduledBlob.Delay(delay, this.logger, stoppingToken);
             }
         }
     }

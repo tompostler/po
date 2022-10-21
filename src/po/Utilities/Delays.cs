@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +21,7 @@ namespace po.Utilities
             /// <summary>
             /// Intended to only be called by one location at a time and not in parallel.
             /// </summary>
-            public async Task Delay(TimeSpan delay, CancellationToken cancellationToken)
+            public async Task Delay(TimeSpan delay, ILogger logger, CancellationToken cancellationToken)
             {
                 this.earlyTaskCompletionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -30,15 +31,18 @@ namespace po.Utilities
                 var delayTask = Task.Delay(delay, linkedCts.Token);
 
                 // Whichever one returned, cancel the other
+                logger.LogInformation($"Sleeping {delay}");
                 Task returnedTask = await Task.WhenAny(delayTask, this.earlyTaskCompletionSource.Task);
                 if (returnedTask == delayTask)
                 {
+                    logger.LogInformation("Delay task completed. Cancelling early completion task.");
                     _ = this.earlyTaskCompletionSource.TrySetCanceled(CancellationToken.None);
                     this.earlyTaskCompletionSource = null;
                     await delayTask;
                 }
                 else
                 {
+                    logger.LogInformation("Early task completed. Cancelling delay task.");
                     cts.Cancel();
                 }
             }
