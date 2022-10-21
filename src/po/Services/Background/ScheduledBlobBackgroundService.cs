@@ -84,6 +84,7 @@ namespace po.Services.Background
 
                             _ = poContext.ScheduledBlobs.Remove(nextScheduledBlob);
                             _ = await poContext.SaveChangesAsync(stoppingToken);
+                            delay = TimeSpan.FromMinutes(1);
                         }
                         else if (nextScheduledBlob != default)
                         {
@@ -101,7 +102,6 @@ namespace po.Services.Background
                     this.logger.LogError(ex, "Could not check/handle scheduled image.");
                 }
 
-                this.logger.LogInformation($"Sleeping {delay} until the next iteration.");
                 await this.delays.ScheduledBlob.Delay(delay, this.logger, stoppingToken);
             }
         }
