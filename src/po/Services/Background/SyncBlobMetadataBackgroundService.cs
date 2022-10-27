@@ -47,7 +47,9 @@ namespace po.Services.Background
         protected override async Task ExecuteOnceAsync(CancellationToken cancellationToken)
         {
             Dictionary<string, CountValue> counts = new();
-            string report = await InnerExecuteOnceAsync(this.serviceProvider, this.storage, this.logger, counts, cancellationToken);
+
+            // Add new blobs
+            await FindAndAddNewBlobsAsync(this.serviceProvider, this.storage, this.logger, counts, cancellationToken);
 
             // Remove any that we haven't seen for more than 3 scrape intervals
             DateTimeOffset tooOld = DateTimeOffset.UtcNow.AddDays(this.Interval.TotalDays * -3);
@@ -83,6 +85,8 @@ namespace po.Services.Background
                 _ = await poContext.SaveChangesAsync(cancellationToken);
             }
 
+            // Report on what we did
+            string report = BuildReportFromCounts(counts, this.logger);
             if (report != default)
             {
                 Discord.WebSocket.DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(cancellationToken);
@@ -90,30 +94,8 @@ namespace po.Services.Background
             }
         }
 
-        public static async Task<string> InnerExecuteOnceAsync(IServiceProvider serviceProvider, PoStorage storage, ILogger logger, Dictionary<string, CountValue> counts, CancellationToken cancellationToken, string containerName = default)
+        public static string BuildReportFromCounts(Dictionary<string, CountValue> counts, ILogger logger)
         {
-            List<Models.PoBlob> foundBlobs = new(BatchSize);
-
-            // Add new ones
-            IAsyncEnumerable<Models.PoBlob> enumerable = containerName == default
-                                                        ? storage.EnumerateAllBlobsAsync(cancellationToken)
-                                                        : storage.EnumerateAllBlobsAsync(containerName, cancellationToken);
-            await foreach (Models.PoBlob foundBlob in enumerable)
-            {
-                foundBlobs.Add(foundBlob);
-
-                if (foundBlobs.Count >= BatchSize)
-                {
-                    await ReconcileFoundBlobsInBatchAsync(serviceProvider, foundBlobs, counts, cancellationToken);
-                    foundBlobs.Clear();
-                }
-            }
-            if (foundBlobs.Count > 0)
-            {
-                await ReconcileFoundBlobsInBatchAsync(serviceProvider, foundBlobs, counts, cancellationToken);
-            }
-
-            // Report on what we did
             if (counts.Values.Any(x => x.Added > 0 || x.Removed > 0))
             {
                 int catLen = Math.Max("category".Length, counts.Keys.Max(x => x.Length));
@@ -134,6 +116,30 @@ namespace po.Services.Background
             {
                 logger.LogInformation("Nothing new to report.");
                 return default;
+            }
+        }
+
+        public static async Task FindAndAddNewBlobsAsync(IServiceProvider serviceProvider, PoStorage storage, ILogger logger, Dictionary<string, CountValue> counts, CancellationToken cancellationToken, string containerName = default)
+        {
+            List<Models.PoBlob> foundBlobs = new(BatchSize);
+
+            // Add new ones
+            IAsyncEnumerable<Models.PoBlob> enumerable = containerName == default
+                                                        ? storage.EnumerateAllBlobsAsync(cancellationToken)
+                                                        : storage.EnumerateAllBlobsAsync(containerName, cancellationToken);
+            await foreach (Models.PoBlob foundBlob in enumerable)
+            {
+                foundBlobs.Add(foundBlob);
+
+                if (foundBlobs.Count >= BatchSize)
+                {
+                    await ReconcileFoundBlobsInBatchAsync(serviceProvider, foundBlobs, counts, cancellationToken);
+                    foundBlobs.Clear();
+                }
+            }
+            if (foundBlobs.Count > 0)
+            {
+                await ReconcileFoundBlobsInBatchAsync(serviceProvider, foundBlobs, counts, cancellationToken);
             }
         }
 

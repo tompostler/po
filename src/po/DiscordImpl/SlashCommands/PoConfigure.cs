@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using po.DataAccess;
 using po.Models;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -58,7 +59,7 @@ namespace po.DiscordImpl.SlashCommands
             )
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("rescan")
-                .WithDescription("For a currently associated container, rescan its contents.")
+                .WithDescription("For a currently associated container, rescan its contents. Only adds blobs (the daily scan will eventually remove blobs).")
                 .WithType(ApplicationCommandOptionType.SubCommand)
             )
             .Build();
@@ -112,7 +113,9 @@ namespace po.DiscordImpl.SlashCommands
             else if (operation == "rescan")
             {
                 await payload.DeferAsync();
-                string response = await Services.Background.SyncBlobMetadataBackgroundService.InnerExecuteOnceAsync(this.serviceProvider, this.poStorage, this.logger, new(), CancellationToken.None, containerName: command.RegistrationData);
+                Dictionary<string, Services.Background.SyncBlobMetadataBackgroundService.CountValue> counts = new();
+                await Services.Background.SyncBlobMetadataBackgroundService.FindAndAddNewBlobsAsync(this.serviceProvider, this.poStorage, this.logger, counts, CancellationToken.None, containerName: command.RegistrationData);
+                string response = Services.Background.SyncBlobMetadataBackgroundService.BuildReportFromCounts(counts, this.logger);
 
                 if (response?.Length > 2000)
                 {
