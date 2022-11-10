@@ -59,7 +59,7 @@ namespace po.DiscordImpl.SlashCommands
             )
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("rescan")
-                .WithDescription("For a currently associated container, rescan its contents. Only adds blobs (the daily scan will eventually remove blobs).")
+                .WithDescription("For a currently associated container, rescan its contents. Only adds blobs.")
                 .WithType(ApplicationCommandOptionType.SubCommand)
             )
             .Build();

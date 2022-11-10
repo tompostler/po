@@ -19,7 +19,7 @@ namespace po.DiscordImpl.SlashCommands
 
         public override SlashCommandProperties BuiltCommand => new SlashCommandBuilder()
             .WithName(this.ExpectedCommand.Name)
-            .WithDescription("Removes all messages from the channel older than a specified amount (if requested). Note: this command requires enablement.")
+            .WithDescription("Removes all messages from the channel older than a specified amount (if requested).")
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("days")
                 .WithDescription("The number of days ago to delete messages older than")
