@@ -165,6 +165,7 @@ namespace po.Services
                         }
                         if (!command.SuccessfullyRegistered.HasValue || command.Version != slashCommand.ExpectedCommand.Version)
                         {
+                            this.logger.LogInformation($"Registering command {slashCommand.ExpectedCommand.Name}");
                             SocketApplicationCommand response = command.IsGuildLevel
                                 ? await primaryGuild.CreateApplicationCommandAsync(slashCommand.BuiltCommand, cancellationToken.ToRO())
                                 : await this.discordClient.CreateGlobalApplicationCommandAsync(slashCommand.BuiltCommand, cancellationToken.ToRO());
