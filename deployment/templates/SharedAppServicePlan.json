@@ -12,7 +12,7 @@
     },
     "sku": {
       "type": "string",
-      "defaultValue": "B1"
+      "defaultValue": "B2"
     }
   },
   "resources": [
