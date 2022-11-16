@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using po.DataAccess;
 using po.Extensions;
+using po.Models;
 using po.Utilities;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace po.Services
     public sealed class BotService : IHostedService
     {
         private readonly IServiceProvider serviceProvider;
+        private readonly PoStorage poBlobStorage;
         private readonly Sentinals sentinals;
         private readonly Dictionary<string, DiscordImpl.SlashCommands.SlashCommandBase> slashCommands;
         private readonly Options.Discord options;
@@ -32,6 +34,7 @@ namespace po.Services
 
         public BotService(
             IServiceProvider serviceProvider,
+            PoStorage poBlobStorage,
             Sentinals sentinals,
             IEnumerable<DiscordImpl.SlashCommands.SlashCommandBase> slashCommands,
             IOptions<Options.Discord> options,
@@ -39,6 +42,7 @@ namespace po.Services
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
+            this.poBlobStorage = poBlobStorage;
             this.sentinals = sentinals;
             this.slashCommands = slashCommands.ToDictionary(x => x.ExpectedCommand.Name);
             this.options = options.Value;
@@ -80,24 +84,42 @@ namespace po.Services
             return Task.CompletedTask;
         }
 
-        private Task DiscordClient_MessageReceived(SocketMessage message)
+        private async Task DiscordClient_MessageReceived(SocketMessage message)
         {
             this.logger.LogInformation($"Message received: {message}");
 
             // Bail out if it's a System Message.
             if (message is not SocketUserMessage userMessage)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             // We don't want the bot to respond to itself or other bots.
             if (userMessage.Author.Id == this.discordClient.CurrentUser.Id || userMessage.Author.IsBot)
             {
-                return Task.CompletedTask;
+                return;
             }
 
             // If we want to actually do something based on messages received, that would go here
-            return Task.CompletedTask;
+
+            // If it's a naive po command (e.g. /po show [category]), then handle it
+            if (message.Content.StartsWith("/po show"))
+            {
+                string category = message.Content.Substring("/po show".Length);
+
+                using IServiceScope scope = this.serviceProvider.CreateScope();
+                using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+                SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.ChannelId == message.Channel.Id);
+
+                await DiscordExtensions.SendSingleImageAsync(
+                    this.serviceProvider,
+                    this.poBlobStorage,
+                    command.RegistrationData,
+                    category,
+                    message.Author.Username,
+                    (msg) => this.discordClient.SendTextMessageAsync(message.Channel.Id, msg, this.logger, CancellationToken.None),
+                    (embed) => this.discordClient.SendEmbedMessageAsync(message.Channel.Id, embed, this.logger, CancellationToken.None));
+            }
         }
 
         private async Task DiscordClient_Ready(CancellationToken cancellationToken)
@@ -188,7 +210,7 @@ namespace po.Services
         private async Task DiscordClient_SlashCommandExecuted(SocketSlashCommand payload)
         {
             using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>($"{this.GetType().FullName}.{nameof(DiscordClient_SlashCommandExecuted)}");
-            
+
             try
             {
                 Models.SlashCommand command;
