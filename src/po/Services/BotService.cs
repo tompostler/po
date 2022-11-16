@@ -89,7 +89,8 @@ namespace po.Services
             var telemObj = new
             {
                 channelId = message.Channel.Id,
-                messageId = message.Id,
+                id = message.Id,
+                type = message.Type,
                 content = !string.IsNullOrEmpty(message.Content) ? message.Content : (message.Embeds?.Any() == true ? message.Embeds.First().ToJsonString() : string.Empty),
                 embedCount = message.Embeds.Count,
                 componentCount = message.Components.Count,
