@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
@@ -111,8 +112,8 @@ namespace po.Services
             };
             this.logger.LogInformation($"Message received: {trimmed.ToJsonString()}");
 
-            // Bail out if it's a System Message
-            if (imessage is not SocketUserMessage userMessage)
+            // Bail out if it's not a user-initiated message (socket or rest variant)
+            if (imessage is not IUserMessage userMessage)
             {
                 return;
             }
