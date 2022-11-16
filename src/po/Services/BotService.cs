@@ -90,7 +90,7 @@ namespace po.Services
             {
                 channelId = message.Channel.Id,
                 messageId = message.Id,
-                message.Content,
+                content = !string.IsNullOrEmpty(message.Content) ? message.Content : (message.Embeds?.Any() == true ? message.Embeds.First().ToJsonString() : string.Empty),
                 embedCount = message.Embeds.Count,
                 componentCount = message.Components.Count,
             };
