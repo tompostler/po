@@ -86,7 +86,14 @@ namespace po.Services
 
         private async Task DiscordClient_MessageReceived(SocketMessage message)
         {
-            this.logger.LogInformation($"Message received: {message}");
+            var telemObj = new
+            {
+                channelId = message.Channel.Id,
+                messageId = message.Id,
+                message.Content,
+                embedCount = message.Embeds.Count
+            };
+            this.logger.LogInformation($"Message received: {telemObj.ToJsonString()}");
 
             // Bail out if it's a System Message.
             if (message is not SocketUserMessage userMessage)
