@@ -97,7 +97,7 @@ namespace po.Services
                     imessage = await channel.GetMessageAsync(imessage.Id);
                 }
             }
-            var telemObj = new
+            var trimmed = new
             {
                 channelId = imessage.Channel.Id,
                 id = imessage.Id,
@@ -106,7 +106,7 @@ namespace po.Services
                 embedCount = imessage.Embeds?.Count,
                 refetchAttempted
             };
-            this.logger.LogInformation($"Message received: {telemObj.ToJsonString()}");
+            this.logger.LogInformation($"Message received: {trimmed.ToJsonString()}");
 
             // Bail out if it's a System Message.
             if (imessage is not SocketUserMessage userMessage)
@@ -123,9 +123,9 @@ namespace po.Services
             // If we want to actually do something based on messages received, that would go here
 
             // If it's a naive po command (e.g. /po show [category]), then handle it
-            if (imessage.Content?.StartsWith("/po show") == true)
+            if (trimmed.content.StartsWith("/po show") == true)
             {
-                string category = imessage.Content.Substring("/po show".Length);
+                string category = trimmed.content.Substring("/po show".Length);
 
                 using IServiceScope scope = this.serviceProvider.CreateScope();
                 using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
