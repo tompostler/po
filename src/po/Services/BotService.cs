@@ -127,9 +127,9 @@ namespace po.Services
             // If we want to actually do something based on messages received, that would go here
 
             // If it's a naive po command (e.g. /po show [category]), then handle it
-            if (trimmed.content.StartsWith("/po show") == true)
+            if (trimmed.content.StartsWith("/po show"))
             {
-                string category = trimmed.content.Substring("/po show".Length);
+                string category = trimmed.content.Substring("/po show".Length).Trim();
 
                 using IServiceScope scope = this.serviceProvider.CreateScope();
                 using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
