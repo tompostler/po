@@ -86,6 +86,8 @@ namespace po.Services
 
         private async Task DiscordClient_MessageReceived(SocketMessage message)
         {
+            using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>($"{this.GetType().FullName}.{nameof(DiscordClient_MessageReceived)}");
+            
             IMessage imessage = message;
             bool refetchAttempted = false;
             if (string.IsNullOrEmpty(imessage.Content) && imessage.Embeds?.Any() == false)
@@ -109,13 +111,13 @@ namespace po.Services
             };
             this.logger.LogInformation($"Message received: {trimmed.ToJsonString()}");
 
-            // Bail out if it's a System Message.
+            // Bail out if it's a System Message
             if (imessage is not SocketUserMessage userMessage)
             {
                 return;
             }
 
-            // We don't want the bot to respond to itself or other bots.
+            // We don't want the bot to respond to itself or other bots
             if (userMessage.Author.Id == this.discordClient.CurrentUser.Id || userMessage.Author.IsBot)
             {
                 return;
