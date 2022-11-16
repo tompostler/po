@@ -91,7 +91,8 @@ namespace po.Services
                 channelId = message.Channel.Id,
                 messageId = message.Id,
                 message.Content,
-                embedCount = message.Embeds.Count
+                embedCount = message.Embeds.Count,
+                componentCount = message.Components.Count,
             };
             this.logger.LogInformation($"Message received: {telemObj.ToJsonString()}");
 
