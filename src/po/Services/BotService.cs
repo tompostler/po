@@ -102,6 +102,7 @@ namespace po.Services
                 channelId = imessage.Channel.Id,
                 id = imessage.Id,
                 type = imessage.Type,
+                netType = imessage.GetType().Name,
                 content = !string.IsNullOrEmpty(imessage.Content) ? imessage.Content : (imessage.Embeds?.Any() == true ? imessage.Embeds.First().ToString() : string.Empty),
                 embedCount = imessage.Embeds?.Count,
                 refetchAttempted
