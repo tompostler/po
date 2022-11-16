@@ -86,19 +86,30 @@ namespace po.Services
 
         private async Task DiscordClient_MessageReceived(SocketMessage message)
         {
+            IMessage imessage = message;
+            bool refetchAttempted = false;
+            if (string.IsNullOrEmpty(imessage.Content) && imessage.Embeds?.Any() == false)
+            {
+                    refetchAttempted = true;
+                var channel = await this.discordClient.GetChannelAsync(imessage.Channel.Id) as IMessageChannel;
+                if (channel != default)
+                {
+                    imessage = await channel.GetMessageAsync(imessage.Id);
+                }
+            }
             var telemObj = new
             {
-                channelId = message.Channel.Id,
-                id = message.Id,
-                type = message.Type,
-                content = !string.IsNullOrEmpty(message.Content) ? message.Content : (message.Embeds?.Any() == true ? message.Embeds.First().ToJsonString() : string.Empty),
-                embedCount = message.Embeds.Count,
-                componentCount = message.Components.Count,
+                channelId = imessage.Channel.Id,
+                id = imessage.Id,
+                type = imessage.Type,
+                content = !string.IsNullOrEmpty(imessage.Content) ? imessage.Content : (imessage.Embeds?.Any() == true ? imessage.Embeds.First().ToString() : string.Empty),
+                embedCount = imessage.Embeds?.Count,
+                refetchAttempted
             };
             this.logger.LogInformation($"Message received: {telemObj.ToJsonString()}");
 
             // Bail out if it's a System Message.
-            if (message is not SocketUserMessage userMessage)
+            if (imessage is not SocketUserMessage userMessage)
             {
                 return;
             }
@@ -112,22 +123,22 @@ namespace po.Services
             // If we want to actually do something based on messages received, that would go here
 
             // If it's a naive po command (e.g. /po show [category]), then handle it
-            if (message.Content?.StartsWith("/po show") == true)
+            if (imessage.Content?.StartsWith("/po show") == true)
             {
-                string category = message.Content.Substring("/po show".Length);
+                string category = imessage.Content.Substring("/po show".Length);
 
                 using IServiceScope scope = this.serviceProvider.CreateScope();
                 using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-                SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.ChannelId == message.Channel.Id);
+                SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.ChannelId == imessage.Channel.Id);
 
                 await DiscordExtensions.SendSingleImageAsync(
                     this.serviceProvider,
                     this.poBlobStorage,
                     command.RegistrationData,
                     category,
-                    message.Author.Username,
-                    (msg) => this.discordClient.SendTextMessageAsync(message.Channel.Id, msg, this.logger, CancellationToken.None),
-                    (embed) => this.discordClient.SendEmbedMessageAsync(message.Channel.Id, embed, this.logger, CancellationToken.None));
+                    imessage.Author.Username,
+                    (msg) => this.discordClient.SendTextMessageAsync(imessage.Channel.Id, msg, this.logger, CancellationToken.None),
+                    (embed) => this.discordClient.SendEmbedMessageAsync(imessage.Channel.Id, embed, this.logger, CancellationToken.None));
             }
         }
 
