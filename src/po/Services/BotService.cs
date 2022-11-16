@@ -111,7 +111,7 @@ namespace po.Services
             // If we want to actually do something based on messages received, that would go here
 
             // If it's a naive po command (e.g. /po show [category]), then handle it
-            if (message.Content.StartsWith("/po show"))
+            if (message.Content?.StartsWith("/po show") == true)
             {
                 string category = message.Content.Substring("/po show".Length);
 
