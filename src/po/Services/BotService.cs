@@ -90,7 +90,7 @@ namespace po.Services
             bool refetchAttempted = false;
             if (string.IsNullOrEmpty(imessage.Content) && imessage.Embeds?.Any() == false)
             {
-                    refetchAttempted = true;
+                refetchAttempted = true;
                 var channel = await this.discordClient.GetChannelAsync(imessage.Channel.Id) as IMessageChannel;
                 if (channel != default)
                 {
