@@ -1,4 +1,5 @@
-﻿using Discord.WebSocket;
+﻿using Discord;
+using Discord.WebSocket;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -17,25 +18,22 @@ using System.Threading.Tasks;
 
 namespace po.Services.Background
 {
-    public sealed class ScheduledBlobBackgroundService : BackgroundService
+    public sealed class ScheduledMessageBackgroundService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoStorage poStorage;
         private readonly Delays delays;
         private readonly Sentinals sentinals;
-        private readonly ILogger<ScheduledBlobBackgroundService> logger;
+        private readonly ILogger<ScheduledMessageBackgroundService> logger;
         private readonly TelemetryClient telemetryClient;
 
-        public ScheduledBlobBackgroundService(
+        public ScheduledMessageBackgroundService(
             IServiceProvider serviceProvider,
-            PoStorage poStorage,
             Delays delays,
             Sentinals sentinals,
-            ILogger<ScheduledBlobBackgroundService> logger,
+            ILogger<ScheduledMessageBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
-            this.poStorage = poStorage;
             this.delays = delays;
             this.sentinals = sentinals;
             this.logger = logger;
@@ -55,41 +53,43 @@ namespace po.Services.Background
                     using (IServiceScope scope = this.serviceProvider.CreateScope())
                     using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                     {
-                        List<Models.ScheduledBlob> nextScheduledBlobs = await poContext.ScheduledBlobs
-                                                                    .OrderBy(x => x.ScheduledDate)
-                                                                    .Take(2)
-                                                                    .ToListAsync(stoppingToken);
-                        Models.ScheduledBlob nextScheduledBlob = nextScheduledBlobs.FirstOrDefault();
+                        List<Models.ScheduledMessage> nextScheduledMessages = await poContext.ScheduledMessages
+                                                                                .OrderBy(x => x.ScheduledDate)
+                                                                                .Take(2)
+                                                                                .ToListAsync(stoppingToken);
+                        Models.ScheduledMessage nextScheduledMessage = nextScheduledMessages.FirstOrDefault();
 
-                        if (nextScheduledBlob?.ScheduledDate < DateTimeOffset.UtcNow)
+                        if (nextScheduledMessage?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
                             DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
-                            var channel = discordClient.GetChannel(nextScheduledBlob.ChannelId) as SocketTextChannel;
+                            var channel = discordClient.GetChannel(nextScheduledMessage.ChannelId) as SocketTextChannel;
 
-                            TimeSpan? nextBlobIn = default;
-                            if (nextScheduledBlobs.Count == 2)
+                            TimeSpan? nextMessageIn = default;
+                            if (nextScheduledMessages.Count == 2)
                             {
-                                nextBlobIn = nextScheduledBlobs.Last().ScheduledDate - nextScheduledBlob.ScheduledDate;
+                                nextMessageIn = nextScheduledMessages.Last().ScheduledDate - nextScheduledMessage.ScheduledDate;
                             }
 
-                            await DiscordExtensions.SendSingleImageAsync(
-                                this.serviceProvider,
-                                this.poStorage,
-                                nextScheduledBlob.ContainerName,
-                                nextScheduledBlob.Category,
-                                nextScheduledBlob.Username,
-                                (message) => channel.SendMessageAsync(message),
-                                (embed) => channel.SendMessageAsync(embed: embed),
-                                nextBlobIn);
+                            _ = await channel.SendMessageAsync(
+                                embed: new EmbedBuilder()
+                                {
+                                    Author = new EmbedAuthorBuilder()
+                                    {
+                                        Name = nextScheduledMessage.Author
+                                    },
+                                    Description = nextScheduledMessage.Message,
+                                    Timestamp = nextScheduledMessage.CreatedDate
+                                }.Build(),
+                                options: stoppingToken.ToRO());
 
-                            _ = poContext.ScheduledBlobs.Remove(nextScheduledBlob);
+                            _ = poContext.ScheduledMessages.Remove(nextScheduledMessage);
                             _ = await poContext.SaveChangesAsync(stoppingToken);
                             delay = TimeSpan.FromMinutes(1);
                         }
-                        else if (nextScheduledBlob != default)
+                        else if (nextScheduledMessage != default)
                         {
-                            // If there's no current blob to show, let the delay be until the next blob
-                            delay = nextScheduledBlob.ScheduledDate.Subtract(DateTimeOffset.UtcNow);
+                            // If there's no current message to send, let the delay be until the next message
+                            delay = nextScheduledMessage.ScheduledDate.Subtract(DateTimeOffset.UtcNow);
                         }
                     }
                     // The delay should be at least 1 minute
@@ -99,10 +99,10 @@ namespace po.Services.Background
                 }
                 catch (Exception ex)
                 {
-                    this.logger.LogError(ex, "Could not check/handle scheduled image.");
+                    this.logger.LogError(ex, "Could not check/handle scheduled message.");
                 }
 
-                await this.delays.ScheduledBlob.Delay(delay, this.logger, stoppingToken);
+                await this.delays.ScheduledMessage.Delay(delay, this.logger, stoppingToken);
             }
         }
     }

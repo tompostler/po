@@ -12,6 +12,7 @@ namespace po.DiscordImpl
                 .AddSingleton<SlashCommands.SlashCommandBase, SlashCommands.NukeMessages>()
                 .AddSingleton<SlashCommands.SlashCommandBase, SlashCommands.PoCommand>()
                 .AddSingleton<SlashCommands.SlashCommandBase, SlashCommands.PoConfigure>()
+                .AddSingleton<SlashCommands.SlashCommandBase, SlashCommands.ScheduleMessage>()
                 ;
         }
     }

@@ -11,6 +11,7 @@ namespace po.DataAccess
         public DbSet<PoBlob> Blobs { get; set; }
         public DbSet<RandomMessage> RandomMessages { get; set; }
         public DbSet<ScheduledBlob> ScheduledBlobs { get; set; }
+        public DbSet<ScheduledMessage> ScheduledMessages { get; set; }
         public DbSet<SlashCommand> SlashCommands { get; set; }
         public DbSet<SlashCommandChannel> SlashCommandChannels { get; set; }
         public DbSet<SynchronizedBackgroundService> SynchronizedBackgroundServices { get; set; }
@@ -51,6 +52,16 @@ namespace po.DataAccess
                 .HasDefaultValueSql("NEXT VALUE FOR dbo.ScheduledBlobIds");
 
             _ = modelBuilder.Entity<ScheduledBlob>()
+                .Property(x => x.CreatedDate)
+                .HasDefaultValueSql("SYSDATETIMEOFFSET()");
+
+            _ = modelBuilder.HasSequence<long>("ScheduledMessageIds");
+
+            _ = modelBuilder.Entity<ScheduledMessage>()
+                .Property(x => x.Id)
+                .HasDefaultValueSql("NEXT VALUE FOR dbo.ScheduledMessageIds");
+
+            _ = modelBuilder.Entity<ScheduledMessage>()
                 .Property(x => x.CreatedDate)
                 .HasDefaultValueSql("SYSDATETIMEOFFSET()");
 

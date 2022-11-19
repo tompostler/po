@@ -8,6 +8,7 @@ namespace po.Utilities
     public sealed class Delays
     {
         public DelayImpelmentation ScheduledBlob { get; } = new();
+        public DelayImpelmentation ScheduledMessage { get; } = new();
 
         public sealed class DelayImpelmentation
         {
