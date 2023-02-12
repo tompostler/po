@@ -125,7 +125,7 @@ namespace po.Services.Background
 
             // Add new ones
             IAsyncEnumerable<Models.PoBlob> enumerable = containerName == default
-                                                        ? storage.EnumerateAllBlobsAsync(cancellationToken)
+                                                        ? storage.EnumerateAllBlobsAsync(cancellationToken, goSlow: true)
                                                         : storage.EnumerateAllBlobsAsync(containerName, cancellationToken);
             await foreach (Models.PoBlob foundBlob in enumerable)
             {

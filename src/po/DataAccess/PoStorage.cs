@@ -25,7 +25,7 @@ namespace po.DataAccess
             this.logger = logger;
         }
 
-        public async IAsyncEnumerable<Models.PoBlob> EnumerateAllBlobsAsync([EnumeratorCancellation] CancellationToken cancellationToken)
+        public async IAsyncEnumerable<Models.PoBlob> EnumerateAllBlobsAsync([EnumeratorCancellation] CancellationToken cancellationToken, bool goSlow = false)
         {
             uint countContainers = 0;
             uint countTotalBlobs = 0;
@@ -34,6 +34,12 @@ namespace po.DataAccess
                 countContainers++;
                 await foreach (Models.PoBlob blob in this.EnumerateAllBlobsAsync(container.Name, cancellationToken))
                 {
+                    if (goSlow)
+                    {
+                        // Slow down searching for all the blobs to make it easier on blobs and sql (when doing the background job scrape)
+                        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+                    }
+
                     countTotalBlobs++;
                     yield return blob;
                 }
