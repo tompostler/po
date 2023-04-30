@@ -1,0 +1,95 @@
+jobs:
+
+
+- job: DotnetBuild
+  pool:
+    vmImage: windows-2022
+
+  steps:
+
+  - task: gitversion/setup@0
+    displayName: Install GitVersion
+    inputs:
+      versionSpec: 5.8.x
+
+  - task: gitversion/execute@0
+    displayName: Determine Version
+    inputs:
+      useConfigFile: true
+      configFilePath: GitVersion.yml
+
+  - task: Cache@2
+    displayName: NuGet package caching
+    inputs:
+      key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)/src/**/*.csproj'
+      restoreKeys: |
+        nuget | "$(Agent.OS)"
+        nuget
+      path: $(NUGET_PACKAGES)
+
+  - task: DotNetCoreCLI@2
+    displayName: Restore nuget packages
+    inputs:
+      command: restore
+      projects: src/po.sln
+
+  - task: DotNetCoreCLI@2
+    displayName: Build and zip to the staging directory (linux-x64)
+    inputs:
+      command: publish
+      projects: src/po/po.csproj
+      arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output --no-self-contained'
+      zipAfterPublish: true
+      modifyOutputPath: true
+
+  - task: CopyFiles@2
+    displayName: Copy deployment files to output
+    inputs:
+      sourceFolder: $(Build.SourcesDirectory)/deployment/
+      contents: '**' 
+      targetFolder: $(Build.ArtifactStagingDirectory)
+
+  - powershell: '"$(Build.SourceVersionMessage)" > $(Build.ArtifactStagingDirectory)/commit-desc.txt'
+    displayName: Get build desc
+
+  - task: PublishBuildArtifacts@1
+    displayName: Publish build artifacts
+    inputs:
+      pathToPublish: $(Build.ArtifactStagingDirectory)
+      artifactName: drop
+      publishLocation: Container
+
+
+- job: TagSource
+  dependsOn: DotnetBuild
+  pool:
+    vmImage: windows-latest
+
+  steps:
+
+  - checkout: none
+
+  - powershell: |
+      # .DESCRIPTION
+      # This is needed since VSTS "Tag build on success" is tagging ALL the builds. This, as a build task, can be conditionalized to only run on the master branches.
+      # In order for this to work for a build/release phase, you MUST check the box to "Allow scripts to access OAuth token".
+      # This script will succeed on Unauthorized, Duplicate Tag, and successful scenarios. This is by design.
+      $tagUrl = "{0}{1}/_apis/git/repositories/{2}/refs?api-version=1.0" -f $env:SYSTEM_TEAMFOUNDATIONCOLLECTIONURI, $env:SYSTEM_TEAMPROJECT, $env:BUILD_REPOSITORY_NAME
+      Write-Host "URL: $tagUrl"
+      $newTag = @"
+      [
+        {
+          "name": "refs/tags/$env:BUILD_BUILDNUMBER",
+          "oldObjectId": "0000000000000000000000000000000000000000",
+          "newObjectId": "$env:BUILD_SOURCEVERSION"
+        }
+      ]
+      "@;
+      $auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes((":{0}" -f $env:SYSTEM_ACCESSTOKEN)))
+      $result = Invoke-RestMethod $tagUrl -Method POST -Body $newTag -ContentType "application/json" -Headers @{ Authorization = ("Basic {0}" -f $auth) }
+      $result | ConvertTo-Json -Depth 100 | Out-Host
+    condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'))
+    displayName: Tag source with build number
+    env:
+      # Have to explicitly map through to grant access
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)

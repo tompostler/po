@@ -1,3 +1,8 @@
+variables:
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+
+lockBehavior: sequential
+
 trigger:
 - main
 
@@ -6,47 +11,9 @@ pool:
 
 name: '$(Date:%y).$(DayOfYear).$(Rev:r)'
 
-steps:
+stages:
 
-- task: gitversion/setup@0
-  displayName: Install GitVersion
-  inputs:
-    versionSpec: 5.8.x
-
-- task: gitversion/execute@0
-  displayName: Determine Version
-  inputs:
-    useConfigFile: true
-    configFilePath: GitVersion.yml
-
-- task: DotNetCoreCLI@2
-  displayName: Restore nuget packages
-  inputs:
-    command: restore
-    projects: src/po.sln
-
-- task: DotNetCoreCLI@2
-  displayName: Build and zip to the staging directory (linux-x64)
-  inputs:
-    command: publish
-    projects: src/po/po.csproj
-    arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory)/output --no-self-contained'
-    zipAfterPublish: true
-    modifyOutputPath: true
-
-- task: CopyFiles@2
-  displayName: Copy deployment files to output
-  inputs:
-    sourceFolder: $(Build.SourcesDirectory)/deployment/
-    contents: '**' 
-    targetFolder: $(Build.ArtifactStagingDirectory)
-
-- powershell: '"$(Build.SourceVersionMessage)" > $(Build.ArtifactStagingDirectory)/commit-desc.txt'
-  displayName: Get build desc
-
-- task: PublishBuildArtifacts@1
-  displayName: Publish build artifacts
-  inputs:
-    pathToPublish: $(Build.ArtifactStagingDirectory)
-    artifactName: drop
-    publishLocation: Container
+- stage: Build
+  dependsOn: []
+  jobs:
+  - template: jobs/build.yml
