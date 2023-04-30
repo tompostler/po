@@ -1,0 +1,62 @@
+jobs:
+
+- job: Deploy_AppInsights
+  dependsOn: []
+  displayName: AppInsights
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    fetchTags: false
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: AppInsights.json
+    inputs:
+      azureResourceManagerConnection: f54f1d6c-d346-41c4-a385-f3b9a579059f
+      subscriptionId: 78560c44-50bb-4840-9d59-84578a99032e
+      resourceGroupName: tcp-wtf-hosting
+      location: Central US
+      csmFile: $(Build.SourcesDirectory)/deployment/templates/AppInsights.json
+      csmParametersFile: $(Build.SourcesDirectory)/deployment/parameters/Empty.json
+
+- job: Deploy_SharedAppServicePlan
+  dependsOn: []
+  displayName: SharedAppServicePlan
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    fetchTags: false
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: SharedAppServicePlan.json
+    inputs:
+      azureResourceManagerConnection: f54f1d6c-d346-41c4-a385-f3b9a579059f
+      subscriptionId: 78560c44-50bb-4840-9d59-84578a99032e
+      resourceGroupName: tcp-wtf-hosting
+      location: Central US
+      csmFile: $(Build.SourcesDirectory)/deployment/templates/SharedAppServicePlan.json
+      csmParametersFile: $(Build.SourcesDirectory)/deployment/parameters/Empty.json
+
+- job: Deploy_Sql
+  dependsOn: []
+  displayName: Sql
+  steps:
+  - checkout: self
+    fetchDepth: 1
+    fetchTags: false
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: SqlShared.json
+    inputs:
+      azureResourceManagerConnection: f54f1d6c-d346-41c4-a385-f3b9a579059f
+      subscriptionId: 78560c44-50bb-4840-9d59-84578a99032e
+      resourceGroupName: tompostler
+      location: Central US
+      csmFile: $(Build.SourcesDirectory)/deployment/templates/SqlShared.json
+      csmParametersFile: $(Build.SourcesDirectory)/deployment/parameters/Empty.json
+      overrideParameters: -administratorLoginPassword "$(tompostler-sqladmin-password)"
+  - task: AzureResourceManagerTemplateDeployment@3
+    displayName: SqlSpecifics.json
+    inputs:
+      azureResourceManagerConnection: f54f1d6c-d346-41c4-a385-f3b9a579059f
+      subscriptionId: 78560c44-50bb-4840-9d59-84578a99032e
+      resourceGroupName: tompostler
+      location: Central US
+      csmFile: $(Build.SourcesDirectory)/deployment/templates/SqlSpecifics.json
+      csmParametersFile: $(Build.SourcesDirectory)/deployment/parameters/Empty.json
