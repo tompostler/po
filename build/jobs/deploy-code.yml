@@ -60,4 +60,4 @@ jobs:
       } | ConvertTo-Json;
       Invoke-WebRequest -Uri '$(logicappuri-pobot-add-random-message)' -Method POST -ContentType 'application/json' -Body $body -UseBasicParsing;
     condition: failed()
-    displayName: Post deployment message (success)
+    displayName: Post deployment message (failure)
