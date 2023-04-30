@@ -27,3 +27,13 @@ stages:
   - group: tompostler
   jobs:
   - template: jobs/deploy-prereqs.yml
+
+- stage: Deploy_Code
+  dependsOn: [ Build, Deploy_PreReqs ]
+  displayName: Deploy Code
+  pool:
+    vmImage: windows-latest
+  variables:
+  - group: tompostler
+  jobs:
+  - template: jobs/deploy-code.yml
