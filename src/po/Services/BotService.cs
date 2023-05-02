@@ -195,6 +195,8 @@ namespace po.Services
         {
             SocketGuild primaryGuild = this.discordClient.GetGuild(this.options.BotPrimaryGuildId);
 
+            HashSet<string> knownCommandNames = new();
+
             foreach (DiscordImpl.SlashCommands.SlashCommandBase slashCommand in this.slashCommands.Values)
             {
                 try
@@ -221,12 +223,29 @@ namespace po.Services
                             command.SuccessfullyRegistered = DateTimeOffset.UtcNow;
                             _ = await poContext.SaveChangesAsync(cancellationToken);
                         }
+                        knownCommandNames.Add(command.Name);
                     }
                 }
                 catch (Exception ex)
                 {
                     this.logger.LogError(ex, "Could not register a command.");
                 }
+            }
+
+            // Remove unknown global commands
+            IReadOnlyCollection<SocketApplicationCommand> knownGlobalCommands = await this.discordClient.GetGlobalApplicationCommandsAsync(options: cancellationToken.ToRO());
+            foreach (SocketApplicationCommand unknownGlobalCommand in knownGlobalCommands.Where(x => !knownCommandNames.Contains(x.Name)))
+            {
+                this.logger.LogInformation($"Deleting global command [{unknownGlobalCommand.Name}]");
+                //await unknownGlobalCommand.DeleteAsync(cancellationToken.ToRO());
+            }
+
+            // Remove unknown guild commands
+            IReadOnlyCollection<SocketApplicationCommand> knownGuildCommands = await primaryGuild.GetApplicationCommandsAsync(options: cancellationToken.ToRO());
+            foreach (SocketApplicationCommand unknownGuildCommand in knownGuildCommands.Where(x => !knownCommandNames.Contains(x.Name)))
+            {
+                this.logger.LogInformation($"Deleting guild command [{unknownGuildCommand.Name}]");
+                //await unknownGuildCommand.DeleteAsync(cancellationToken.ToRO());
             }
         }
 
