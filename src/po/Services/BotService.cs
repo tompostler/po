@@ -237,7 +237,7 @@ namespace po.Services
             foreach (SocketApplicationCommand unknownGlobalCommand in knownGlobalCommands.Where(x => !knownCommandNames.Contains(x.Name)))
             {
                 this.logger.LogInformation($"Deleting global command [{unknownGlobalCommand.Name}]");
-                //await unknownGlobalCommand.DeleteAsync(cancellationToken.ToRO());
+                await unknownGlobalCommand.DeleteAsync(cancellationToken.ToRO());
             }
 
             // Remove unknown guild commands
@@ -245,7 +245,7 @@ namespace po.Services
             foreach (SocketApplicationCommand unknownGuildCommand in knownGuildCommands.Where(x => !knownCommandNames.Contains(x.Name)))
             {
                 this.logger.LogInformation($"Deleting guild command [{unknownGuildCommand.Name}]");
-                //await unknownGuildCommand.DeleteAsync(cancellationToken.ToRO());
+                await unknownGuildCommand.DeleteAsync(cancellationToken.ToRO());
             }
         }
 
