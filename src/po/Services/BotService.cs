@@ -11,7 +11,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using po.DataAccess;
 using po.Extensions;
-using po.Models;
 using po.Utilities;
 using System;
 using System.Collections.Generic;
@@ -133,7 +132,7 @@ namespace po.Services
 
                 using IServiceScope scope = this.serviceProvider.CreateScope();
                 using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-                SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.ChannelId == imessage.Channel.Id);
+                Models.SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.ChannelId == imessage.Channel.Id);
 
                 await DiscordExtensions.SendSingleImageAsync(
                     this.serviceProvider,

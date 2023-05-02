@@ -9,14 +9,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		..\.editorConfig = ..\.editorConfig
 		..\.gitignore = ..\.gitignore
-		..\azure-pipelines.yml = ..\azure-pipelines.yml
 		..\devinit.ps1 = ..\devinit.ps1
-		..\Directory.build.props = ..\Directory.build.props
 		..\GitVersion.yml = ..\GitVersion.yml
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_deployment", "_deployment\_deployment.csproj", "{57693936-959F-41D8-9044-C2BCD84D12C3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "_build", "_build\_build.csproj", "{6E6FA98E-2733-418A-B9A2-2EC0F97F237F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3810FCD5-ACBA-482C-BAF0-A1703526E341}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.build.props = Directory.build.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,9 +32,14 @@ Global
 		{C2BA01FD-709F-4463-A31F-5A9DE13EE53A}.Debug|x64.Build.0 = Debug|Any CPU
 		{57693936-959F-41D8-9044-C2BCD84D12C3}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{57693936-959F-41D8-9044-C2BCD84D12C3}.Debug|x64.Build.0 = Debug|Any CPU
+		{6E6FA98E-2733-418A-B9A2-2EC0F97F237F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6E6FA98E-2733-418A-B9A2-2EC0F97F237F}.Debug|x64.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3810FCD5-ACBA-482C-BAF0-A1703526E341} = {29C5FE9C-C64A-4994-AFF4-963906F44E92}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {525C6FA6-87A1-44BA-B8A4-608E2F4CCDD5}
