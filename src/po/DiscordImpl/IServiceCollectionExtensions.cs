@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace po.DiscordImpl
+﻿namespace po.DiscordImpl
 {
     public static class IServiceCollectionExtensions
     {

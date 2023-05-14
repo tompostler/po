@@ -1,8 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using po.Exceptions;
-using System;
-using System.Threading.Tasks;
+﻿using po.Exceptions;
 
 namespace po.Middleware
 {

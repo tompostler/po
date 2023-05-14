@@ -2,14 +2,8 @@
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using po.DataAccess;
 using po.Utilities;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace po.Services.Background
 {

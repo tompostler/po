@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace po.Exceptions
+﻿namespace po.Exceptions
 {
     public sealed class BadRequestException : Exception
     {

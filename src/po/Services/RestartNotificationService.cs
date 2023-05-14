@@ -2,14 +2,9 @@
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using po.Extensions;
 using po.Utilities;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace po.Services
 {

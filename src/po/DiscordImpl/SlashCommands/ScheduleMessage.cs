@@ -1,12 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Microsoft.Extensions.DependencyInjection;
 using po.DataAccess;
 using po.Models;
 using po.Utilities;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace po.DiscordImpl.SlashCommands
 {

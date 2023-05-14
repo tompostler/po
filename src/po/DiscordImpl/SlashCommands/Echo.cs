@@ -1,8 +1,6 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using po.Models;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace po.DiscordImpl.SlashCommands
 {
