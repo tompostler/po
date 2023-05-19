@@ -118,8 +118,6 @@ namespace po.DiscordImpl.SlashCommands
 
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
-            string operation = payload.Data.Options.First().Name;
-            string category = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "category")?.Value as string;
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
             SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == payload.CommandName && sc.ChannelId == payload.ChannelId);
@@ -129,6 +127,8 @@ namespace po.DiscordImpl.SlashCommands
                 await payload.RespondAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.");
             }
 
+            string operation = payload.Data.Options.First().Name;
+            string category = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "category")?.Value as string;
             switch (operation)
             {
                 case "random":
@@ -163,6 +163,62 @@ namespace po.DiscordImpl.SlashCommands
                 // Default behavior is to throw up
                 default:
                     throw new NotImplementedException($"`{operation}` with category `{category ?? "(any)"}` is not complete.");
+            }
+        }
+
+        public async Task HandleNaiveCommandAsync(DiscordSocketClient discordClient, IMessage imessage)
+        {
+            // [0]: Slash command, so basically ignore
+            // [1]: Subcommand
+            // [2+]: Arguments (implicit or explicit)
+            string[] contentChunks = imessage.Content.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            contentChunks[0] = contentChunks[0].TrimStart('/').ToLower();
+
+            using IServiceScope scope = this.serviceProvider.CreateScope();
+            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == contentChunks[0] && sc.ChannelId == imessage.Channel.Id);
+
+            if (string.IsNullOrWhiteSpace(command?.RegistrationData))
+            {
+                await discordClient.SendTextMessageAsync(
+                    imessage.Channel.Id,
+                    "This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.",
+                    this.logger,
+                    CancellationToken.None);
+                return;
+            }
+
+            if (contentChunks.Length == 1)
+            {
+                await discordClient.SendTextMessageAsync(
+                    imessage.Channel.Id,
+                    "/po naive invocation requires a subcommand to do something, such as `/po show`.",
+                    this.logger,
+                    CancellationToken.None);
+                return;
+            }
+
+            string category = contentChunks.Length > 2 ? contentChunks[2] : string.Empty;
+            switch (contentChunks[1])
+            {
+                case "show":
+                    await DiscordExtensions.SendSingleImageAsync(
+                        this.serviceProvider,
+                        this.poStorage,
+                        command.RegistrationData,
+                        category,
+                        imessage.Author.Username,
+                    (msg) => discordClient.SendTextMessageAsync(imessage.Channel.Id, msg, this.logger, CancellationToken.None),
+                    (embed) => discordClient.SendEmbedMessageAsync(imessage.Channel.Id, embed, this.logger, CancellationToken.None));
+                    break;
+
+                default:
+                    await discordClient.SendTextMessageAsync(
+                        imessage.Channel.Id,
+                        "/po naive invocation requires a known subcommand to do something, such as `/po show`.",
+                        this.logger,
+                        CancellationToken.None);
+                    break;
             }
         }
 

@@ -115,25 +115,13 @@ namespace po.Services
                 return;
             }
 
-            // If we want to actually do something based on messages received, that would go here
+            // The sku of this app service, combined with the clunkiness of the slash commands in discord means
+            // that it's worth it to just also parse a message manually and respond
 
-            // If it's a naive po command (e.g. /po show [category]), then handle it
-            if (trimmed.content.StartsWith("/po show"))
+            // Try routing/parsing /po
+            if (trimmed.content.StartsWith("/po"))
             {
-                string category = trimmed.content.Substring("/po show".Length).Trim();
-
-                using IServiceScope scope = this.serviceProvider.CreateScope();
-                using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-                Models.SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.ChannelId == imessage.Channel.Id);
-
-                await DiscordExtensions.SendSingleImageAsync(
-                    this.serviceProvider,
-                    this.poBlobStorage,
-                    command.RegistrationData,
-                    category,
-                    imessage.Author.Username,
-                    (msg) => this.discordClient.SendTextMessageAsync(imessage.Channel.Id, msg, this.logger, CancellationToken.None),
-                    (embed) => this.discordClient.SendEmbedMessageAsync(imessage.Channel.Id, embed, this.logger, CancellationToken.None));
+                await (this.slashCommands["po"] as DiscordImpl.SlashCommands.PoCommand)?.HandleNaiveCommandAsync(this.discordClient, imessage);
             }
         }
 
