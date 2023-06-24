@@ -16,8 +16,6 @@ namespace po.DiscordImpl.SlashCommands
         private readonly Delays delays;
         private readonly ILogger<PoCommand> logger;
 
-        private readonly Random random = new();
-
         public PoCommand(
             IServiceProvider serviceProvider,
             PoStorage poBlobStorage,
@@ -33,7 +31,7 @@ namespace po.DiscordImpl.SlashCommands
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "po",
-            Version = 5,
+            Version = 6,
             IsGuildLevel = true,
             RequiresChannelEnablement = true
         };
@@ -41,6 +39,11 @@ namespace po.DiscordImpl.SlashCommands
         public override SlashCommandProperties BuiltCommand => new SlashCommandBuilder()
             .WithName(this.ExpectedCommand.Name)
             .WithDescription("Displays images from blob storage.")
+            .AddOption(new SlashCommandOptionBuilder()
+                .WithName("clear")
+                .WithDescription("Clear images from scheduled queue.")
+                .WithType(ApplicationCommandOptionType.SubCommand)
+            )
             .AddOption(new SlashCommandOptionBuilder()
                 .WithName("random")
                 .WithDescription("Schedule the display of a bunch of images.")
@@ -131,8 +134,12 @@ namespace po.DiscordImpl.SlashCommands
             string category = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "category")?.Value as string;
             switch (operation)
             {
+                case "clear":
+                    await HandleClearAsync(payload, command, poContext);
+                    break;
+
                 case "random":
-                    await this.HandleRandomAsync(payload, command, category, poContext);
+                    await HandleRandomAsync(payload, command, category, poContext);
                     this.delays.ScheduledBlob.CancelDelay();
                     break;
 
@@ -166,7 +173,11 @@ namespace po.DiscordImpl.SlashCommands
             }
         }
 
-        public async Task HandleNaiveCommandAsync(DiscordSocketClient discordClient, IMessage imessage)
+        /// <summary>
+        /// A method to handle a command that's actually just text.
+        /// Useful since the discord mobile app is not the most intuitive with slash commands.
+        /// </summary>
+        public async Task HandleCommandAsync(DiscordSocketClient discordClient, IMessage imessage)
         {
             // [0]: Slash command, so basically ignore
             // [1]: Subcommand
@@ -222,7 +233,17 @@ namespace po.DiscordImpl.SlashCommands
             }
         }
 
-        private async Task HandleRandomAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
+        private static async Task HandleClearAsync(SocketSlashCommand payload, SlashCommandChannel command, PoContext poContext)
+        {
+            // Allow time to respond to the command
+            await payload.DeferAsync();
+
+            int scheduledBlobsDeleted = await poContext.ScheduledBlobs.Where(x => x.ContainerName == command.RegistrationData && x.ChannelId == command.ChannelId).ExecuteDeleteAsync();
+
+            _ = await payload.FollowupAsync($"Canceled {scheduledBlobsDeleted} scheduled image(s).");
+        }
+
+        private static async Task HandleRandomAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
         {
             string errorMessage = default;
 
@@ -275,7 +296,7 @@ namespace po.DiscordImpl.SlashCommands
             delays[0] = TimeSpan.Zero;
             for (int i = 1; i < delays.Length; i++)
             {
-                delays[i] = TimeSpan.FromMinutes(duration.parsed.TotalMinutes * this.random.NextDouble());
+                delays[i] = TimeSpan.FromMinutes(duration.parsed.TotalMinutes * Random.Shared.NextDouble());
             }
             Array.Sort(delays);
 

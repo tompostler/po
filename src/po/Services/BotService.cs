@@ -121,7 +121,7 @@ namespace po.Services
             // Try routing/parsing /po
             if (trimmed.content.StartsWith("/po"))
             {
-                await (this.slashCommands["po"] as DiscordImpl.SlashCommands.PoCommand)?.HandleNaiveCommandAsync(this.discordClient, imessage);
+                await (this.slashCommands["po"] as DiscordImpl.SlashCommands.PoCommand)?.HandleCommandAsync(this.discordClient, imessage);
             }
         }
 
