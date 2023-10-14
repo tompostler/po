@@ -9,12 +9,12 @@
   <!-- Shared properties for all projects. -->
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
-    <LangVersion>10.0</LangVersion>
+    <LangVersion>11.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
 
-    <EFCoreVersion>7.0.5</EFCoreVersion>
+    <EFCoreVersion>7.0.12</EFCoreVersion>
   </PropertyGroup>
 
   <!-- Populate version variables based on GitVersion if available. This will usually be run in the build definition. -->
