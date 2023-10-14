@@ -121,13 +121,16 @@ namespace po.DiscordImpl.SlashCommands
 
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
+            await payload.DeferAsync(ephemeral: true);
+
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
             SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == payload.CommandName && sc.ChannelId == payload.ChannelId);
 
             if (string.IsNullOrWhiteSpace(command?.RegistrationData))
             {
-                await payload.RespondAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.");
+                _ = await payload.FollowupAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.", ephemeral: true);
+                return;
             }
 
             string operation = payload.Data.Options.First().Name;
@@ -154,8 +157,8 @@ namespace po.DiscordImpl.SlashCommands
                         command.RegistrationData,
                         category,
                         payload.User.Username,
-                        (message) => payload.RespondAsync(message),
-                        (embed) => payload.RespondAsync(embed: embed));
+                        (message) => payload.FollowupAsync(message),
+                        (embed) => payload.FollowupAsync(embed: embed));
                     break;
 
                 case "status":
@@ -235,9 +238,6 @@ namespace po.DiscordImpl.SlashCommands
 
         private static async Task HandleClearAsync(SocketSlashCommand payload, SlashCommandChannel command, PoContext poContext)
         {
-            // Allow time to respond to the command
-            await payload.DeferAsync();
-
             int scheduledBlobsDeleted = await poContext.ScheduledBlobs.Where(x => x.ContainerName == command.RegistrationData && x.ChannelId == command.ChannelId).ExecuteDeleteAsync();
 
             _ = await payload.FollowupAsync($"Canceled {scheduledBlobsDeleted} scheduled image(s).");
@@ -284,12 +284,9 @@ namespace po.DiscordImpl.SlashCommands
 
             if (errorMessage != default)
             {
-                await payload.RespondAsync(errorMessage);
+                _ = await payload.FollowupAsync(errorMessage, ephemeral: true);
                 return;
             }
-
-            // Allow time to respond to the command
-            await payload.DeferAsync();
 
             // Create the random intervals (and sort them for sequential counting)
             var delays = new TimeSpan[countRequested.Value + 1];
@@ -320,8 +317,6 @@ namespace po.DiscordImpl.SlashCommands
 
         private static async Task HandleResetAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
         {
-            await payload.DeferAsync();
-
             List<string> categoriesToReset = await poContext.Blobs
                         .Where(x => x.ContainerName == command.RegistrationData && x.Category.StartsWith(category ?? string.Empty) && x.Seen)
                         .GroupBy(x => x.Category)
@@ -355,7 +350,7 @@ namespace po.DiscordImpl.SlashCommands
 
             if (statuses.Count == 0)
             {
-                await payload.RespondAsync("No images known.");
+                _ = await payload.FollowupAsync("No images known.", ephemeral: true);
                 return;
             }
 
@@ -399,7 +394,7 @@ namespace po.DiscordImpl.SlashCommands
             }
             else
             {
-                await payload.RespondAsync(responseString);
+                _ = await payload.FollowupAsync(responseString);
             }
         }
 
@@ -446,12 +441,9 @@ namespace po.DiscordImpl.SlashCommands
 
             if (errorMessage != default)
             {
-                await payload.RespondAsync(errorMessage);
+                _ = await payload.FollowupAsync(errorMessage, ephemeral: true);
                 return;
             }
-
-            // Allow time to respond to the command
-            await payload.DeferAsync();
 
             for (int i = 0; i < countRequested; i++)
             {
