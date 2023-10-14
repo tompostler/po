@@ -121,7 +121,7 @@ namespace po.DiscordImpl.SlashCommands
 
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
-            await payload.DeferAsync(ephemeral: true);
+            await payload.DeferAsync();
 
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
@@ -129,7 +129,7 @@ namespace po.DiscordImpl.SlashCommands
 
             if (string.IsNullOrWhiteSpace(command?.RegistrationData))
             {
-                _ = await payload.FollowupAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.", ephemeral: true);
+                _ = await payload.FollowupAsync("This channel is not associated with any containers, and needs to be to be usable. Try `/po-configure associate <container-name>`.");
                 return;
             }
 
@@ -284,7 +284,7 @@ namespace po.DiscordImpl.SlashCommands
 
             if (errorMessage != default)
             {
-                _ = await payload.FollowupAsync(errorMessage, ephemeral: true);
+                _ = await payload.FollowupAsync(errorMessage);
                 return;
             }
 
@@ -350,7 +350,7 @@ namespace po.DiscordImpl.SlashCommands
 
             if (statuses.Count == 0)
             {
-                _ = await payload.FollowupAsync("No images known.", ephemeral: true);
+                _ = await payload.FollowupAsync("No images known.");
                 return;
             }
 
@@ -441,7 +441,7 @@ namespace po.DiscordImpl.SlashCommands
 
             if (errorMessage != default)
             {
-                _ = await payload.FollowupAsync(errorMessage, ephemeral: true);
+                _ = await payload.FollowupAsync(errorMessage);
                 return;
             }
 
