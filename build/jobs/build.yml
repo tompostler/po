@@ -7,6 +7,11 @@ jobs:
 
   steps:
 
+  - task: UseDotNet@2
+    displayName: Use net8
+    inputs:
+      version: 8.x
+
   - task: gitversion/setup@0
     displayName: Install GitVersion
     inputs:
