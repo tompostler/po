@@ -63,7 +63,7 @@ namespace po
             _ = app.Use(
                 async (context, next) =>
                 {
-                    context.Response.Headers.Add("po-tcp-wtf-server-version", assemblyFileVersion);
+                    context.Response.Headers["po-tcp-wtf-server-version"] = assemblyFileVersion;
                     await next.Invoke();
                 });
 
