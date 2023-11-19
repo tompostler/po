@@ -38,7 +38,7 @@ jobs:
       appType: webAppLinux
       WebAppName: po-tcpwtf
       packageForLinux: '$(Pipeline.Workspace)/drop/po.zip'
-      RuntimeStack: DOTNETCORE|6.0
+      RuntimeStack: DOTNETCORE|8.0
       StartupCommand: dotnet po.dll
 
   - powershell: |
