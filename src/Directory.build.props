@@ -17,15 +17,13 @@
     <EFCoreVersion>8.0.*</EFCoreVersion>
   </PropertyGroup>
 
-  <!-- Populate version variables based on GitVersion if available. This will usually be run in the build definition. -->
-  <PropertyGroup Condition=" '$(GitVersion_FullSemVer)' != '' ">
-    <Version Condition=" '$(Version)' == '' ">$(GitVersion_FullSemVer)</Version>
-    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">$(GitVersion_MajorMinorPatch)</VersionPrefix>
-    <VersionSuffix Condition=" '$(VersionSuffix)' == '' ">$(GitVersion_NuGetPreReleaseTag)</VersionSuffix>
-    <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(GitVersion_NuGetVersion)</PackageVersion>
-    <InformationalVersion Condition=" '$(InformationalVersion)' == '' ">$(GitVersion_InformationalVersion)</InformationalVersion>
-    <AssemblyVersion Condition=" '$(AssemblyVersion)' == '' ">$(GitVersion_AssemblySemVer)</AssemblyVersion>
-    <FileVersion Condition=" '$(FileVersion)' == '' ">$(GitVersion_MajorMinorPatch).$(GitVersion_CommitsSinceVersionSource)</FileVersion>
+  <!-- Populate version variables based on NerdBank.GitVersion if available. -->
+  <PropertyGroup Condition=" '$(NBGV_SemVer2)' != '' ">
+    <Version Condition=" '$(Version)' == '' ">$(NBGV_SemVer2)</Version>
+    <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(NBGV_NuGetPackageVersion)</PackageVersion>
+    <InformationalVersion Condition=" '$(InformationalVersion)' == '' ">$(NBGV_AssemblyInformationalVersion)</InformationalVersion>
+    <AssemblyVersion Condition=" '$(AssemblyVersion)' == '' ">$(NBGV_AssemblyVersion)</AssemblyVersion>
+    <FileVersion Condition=" '$(FileVersion)' == '' ">$(NBGV_AssemblyFileVersion)</FileVersion>
   </PropertyGroup>
 
 </Project>

@@ -12,16 +12,23 @@ jobs:
     inputs:
       version: 8.x
 
-  - task: gitversion/setup@0
-    displayName: Install GitVersion
+  - task: PowerShell@2
+    displayName: dotnet tool install nbgv
     inputs:
-      versionSpec: 5.8.x
+      targetType: inline
+      script: dotnet tool install nbgv --global --version 3.6.*
 
-  - task: gitversion/execute@0
-    displayName: Determine Version
+  - task: PowerShell@2
+    displayName: nbgv get-version and set variables
     inputs:
-      useConfigFile: true
-      configFilePath: GitVersion.yml
+      targetType: inline
+      script: |
+        $versionInfo = nbgv get-version --format json | ConvertFrom-Json;
+        Write-Host ($versionInfo | ConvertTo-Json);
+        foreach ($cloudBuildVar in $versionInfo.CloudBuildAllVars.PSObject.Properties) {
+          Write-Host "##vso[task.setvariable variable=$($cloudBuildVar.Name);]$($cloudBuildVar.Value)";
+        }
+        Write-Host "##vso[build.updatebuildnumber]$($versionInfo.CloudBuildNumber)";
 
   - task: Cache@2
     displayName: NuGet package caching
