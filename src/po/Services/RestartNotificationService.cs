@@ -5,6 +5,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Options;
 using po.Extensions;
 using po.Utilities;
+using System.Diagnostics;
 
 namespace po.Services
 {
@@ -35,7 +36,7 @@ namespace po.Services
 
             await discordClient.TrySendNotificationTextMessageOrFileAsync(
                 this.discordOptions,
-                $"I have been restarted on {Environment.MachineName}. v{typeof(BotService).Assembly.GetName().Version.ToString(3)}",
+                $"I have been restarted on {Environment.MachineName}. v{FileVersionInfo.GetVersionInfo(typeof(BotService).Assembly.Location).FileVersion}",
                 this.logger,
                 stoppingToken);
         }
