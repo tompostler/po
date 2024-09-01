@@ -14,7 +14,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
 
-    <EFCoreVersion>8.0.0</EFCoreVersion>
+    <EFCoreVersion>8.0.*</EFCoreVersion>
   </PropertyGroup>
 
   <!-- Populate version variables based on GitVersion if available. This will usually be run in the build definition. -->
