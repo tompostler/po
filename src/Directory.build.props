@@ -18,12 +18,11 @@
   </PropertyGroup>
 
   <!-- Populate version variables based on NerdBank.GitVersion if available. -->
-  <PropertyGroup Condition=" '$(NBGV_SemVer2)' != '' ">
-    <Version Condition=" '$(Version)' == '' ">$(NBGV_SemVer2)</Version>
-    <PackageVersion Condition=" '$(PackageVersion)' == '' ">$(NBGV_NuGetPackageVersion)</PackageVersion>
-    <InformationalVersion Condition=" '$(InformationalVersion)' == '' ">$(NBGV_AssemblyInformationalVersion)</InformationalVersion>
-    <AssemblyVersion Condition=" '$(AssemblyVersion)' == '' ">$(NBGV_AssemblyVersion)</AssemblyVersion>
-    <FileVersion Condition=" '$(FileVersion)' == '' ">$(NBGV_AssemblyFileVersion)</FileVersion>
-  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning">
+      <PrivateAssets>all</PrivateAssets>
+      <Version>3.6.*</Version>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>

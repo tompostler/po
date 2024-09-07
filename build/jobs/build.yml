@@ -19,23 +19,16 @@ jobs:
       script: dotnet tool install nbgv --global --version 3.6.*
 
   - task: PowerShell@2
-    displayName: nbgv get-version and set variables
+    displayName: nbgv cloud
     inputs:
       targetType: inline
-      script: |
-        $versionInfo = nbgv get-version --format json | ConvertFrom-Json;
-        Write-Host ($versionInfo | ConvertTo-Json);
-        foreach ($cloudBuildVar in $versionInfo.CloudBuildAllVars.PSObject.Properties) {
-          Write-Host "##vso[task.setvariable variable=$($cloudBuildVar.Name);]$($cloudBuildVar.Value)";
-        }
-        Write-Host "##vso[build.updatebuildnumber]$($versionInfo.CloudBuildNumber)";
+      script: nbgv cloud;
 
   - task: Cache@2
     displayName: NuGet package caching
     inputs:
-      key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)/src/**/*.csproj'
+      key: 'nuget | $(Build.SourcesDirectory)/src/**/*.csproj | $(Build.SourcesDirectory)/src/Directory.Build.props'
       restoreKeys: |
-        nuget | "$(Agent.OS)"
         nuget
       path: $(NUGET_PACKAGES)
 

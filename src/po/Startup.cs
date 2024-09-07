@@ -59,7 +59,7 @@ namespace po
 
             _ = app.UseMiddleware<Middleware.ExceptionToStatusCodeMiddleware>();
 
-            string assemblyFileVersion = FileVersionInfo.GetVersionInfo(typeof(Startup).Assembly.Location).ProductVersion;
+            string assemblyFileVersion = ThisAssembly.AssemblyInformationalVersion;
             _ = app.Use(
                 async (context, next) =>
                 {
