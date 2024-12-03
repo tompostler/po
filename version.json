@@ -2,5 +2,6 @@
   "version": "0.8",
   "publicReleaseRefSpec": [
     "^refs/heads/main$"
-  ]
+  ],
+  "versionHeightOffset": -1 // to get the .0 versions
 }
