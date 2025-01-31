@@ -9,19 +9,19 @@
   <!-- Shared properties for all projects. -->
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>11.0</LangVersion>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
 
-    <EFCoreVersion>8.0.*</EFCoreVersion>
+    <EFCoreVersion>9.0.*</EFCoreVersion>
   </PropertyGroup>
 
   <!-- Populate version variables based on NerdBank.GitVersion if available. -->
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning">
       <PrivateAssets>all</PrivateAssets>
-      <Version>3.6.*</Version>
+      <Version>3.7.*</Version>
     </PackageReference>
   </ItemGroup>
 
