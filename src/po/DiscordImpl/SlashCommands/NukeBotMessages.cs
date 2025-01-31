@@ -29,7 +29,7 @@ namespace po.DiscordImpl.SlashCommands
         {
             double daysAgo = payload.Data.Options.FirstOrDefault(x => x.Name == "days")?.Value as double? ?? 1;
 
-            await payload.RespondAsync($"Starting purge of all bot messages in channel older than {daysAgo} days.", ephemeral: true);
+            await payload.RespondAsync($"Starting purge of all bot messages in channel older than {daysAgo} days.");
             IMessageChannel channel = await payload.GetChannelAsync();
             uint count = 0;
             foreach (IMessage message in await channel.GetMessagesAsync().FlattenAsync())
