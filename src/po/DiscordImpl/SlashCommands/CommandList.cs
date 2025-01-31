@@ -20,15 +20,15 @@ namespace po.DiscordImpl.SlashCommands
         // Don't forget to increase the version below to force a re-registration
         private readonly string[] commandNames = new[]
         {
+            "nuke-bot-messages",
             "nuke-messages",
-            "nuke-messages-older-than-day",
             "po",
         };
 
         public override SlashCommand ExpectedCommand => new()
         {
             Name = "commandlist",
-            Version = this.commandNames.Length,
+            Version = 4,
             IsGuildLevel = true
         };
 
