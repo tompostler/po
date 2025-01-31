@@ -32,7 +32,7 @@ namespace po.DiscordImpl.SlashCommands
             await payload.RespondAsync($"Starting purge of all bot messages in channel older than {daysAgo} days.");
             IMessageChannel channel = await payload.GetChannelAsync();
             uint count = 0;
-            foreach (IMessage message in await channel.GetMessagesAsync().FlattenAsync())
+            foreach (IMessage message in await channel.GetMessagesAsync(limit: 1_000).FlattenAsync())
             {
                 if (message.Timestamp < DateTimeOffset.UtcNow.AddDays(-daysAgo))
                 {
