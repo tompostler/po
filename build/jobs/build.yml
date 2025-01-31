@@ -16,7 +16,7 @@ jobs:
     displayName: dotnet tool install nbgv
     inputs:
       targetType: inline
-      script: dotnet tool install nbgv --global --version 3.6.*
+      script: dotnet tool install nbgv --global --version 3.7.*
 
   - task: PowerShell@2
     displayName: nbgv cloud
