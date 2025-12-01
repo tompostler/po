@@ -8,15 +8,15 @@ jobs:
   steps:
 
   - task: UseDotNet@2
-    displayName: Use net8
+    displayName: Use net10
     inputs:
-      version: 8.x
+      version: 10.x
 
   - task: PowerShell@2
     displayName: dotnet tool install nbgv
     inputs:
       targetType: inline
-      script: dotnet tool install nbgv --global --version 3.7.*
+      script: dotnet tool install nbgv --global --version 3.9.*
 
   - task: PowerShell@2
     displayName: nbgv cloud
