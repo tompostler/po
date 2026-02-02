@@ -7,7 +7,7 @@ trigger:
 - main
 
 pool:
-  vmImage: windows-latest
+  vmImage: ubuntu-latest
 
 name: '$(Date:%y).$(DayOfYear).$(Rev:r)'
 
@@ -21,8 +21,6 @@ stages:
 - stage: Deploy_PreReqs
   dependsOn: []
   displayName: Deploy PreReqs
-  pool:
-    vmImage: windows-latest
   variables:
   - group: tompostler
   jobs:
@@ -31,8 +29,6 @@ stages:
 - stage: Deploy_Code
   dependsOn: [ Build, Deploy_PreReqs ]
   displayName: Deploy Code
-  pool:
-    vmImage: windows-latest
   variables:
   - group: tompostler
   jobs:
