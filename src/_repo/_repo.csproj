@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <None Include="$(RepoRoot)\.claude\**\*" Link=".claude\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Include="$(RepoRoot)\build\**\*" Link="build\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Include="$(RepoRoot)\deployment\**\*" Link="deployment\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Include="$(RepoRoot)\src\*" Link="src\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Include="$(RepoRoot)\*" Link="%(RecursiveDir)\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

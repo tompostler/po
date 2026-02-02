@@ -1,9 +1,8 @@
 jobs:
 
-
 - job: DotnetBuild
   pool:
-    vmImage: windows-2022
+    vmImage: windows-latest
 
   steps:
 
@@ -12,31 +11,25 @@ jobs:
     inputs:
       version: 10.x
 
-  - task: PowerShell@2
-    displayName: dotnet tool install nbgv
-    inputs:
-      targetType: inline
-      script: dotnet tool install nbgv --global --version 3.9.*
-
-  - task: PowerShell@2
-    displayName: nbgv cloud
-    inputs:
-      targetType: inline
-      script: nbgv cloud;
+  - powershell: |
+      dotnet tool install nbgv --global --version 3.9.*;
+      nbgv cloud --all-vars;
+    displayName: nbgv
 
   - task: Cache@2
     displayName: NuGet package caching
     inputs:
-      key: 'nuget | $(Build.SourcesDirectory)/src/**/*.csproj | $(Build.SourcesDirectory)/src/Directory.Build.props'
+      # Use major and minor version to poison the cache.
+      key: '$(NBGV_VersionMajor) | $(NBGV_VersionMinor) | $(Build.SourcesDirectory)/Directory.Packages.props'
       restoreKeys: |
-        nuget
+        $(NBGV_VersionMajor) | $(NBGV_VersionMinor)
       path: $(NUGET_PACKAGES)
 
   - task: DotNetCoreCLI@2
     displayName: Restore nuget packages
     inputs:
       command: restore
-      projects: src/po.sln
+      projects: src/po.slnx
 
   - task: DotNetCoreCLI@2
     displayName: Build and zip to the staging directory (linux-x64)
@@ -59,11 +52,8 @@ jobs:
   dependsOn: DotnetBuild
   pool:
     vmImage: windows-latest
-
   steps:
-
   - checkout: none
-
   - powershell: |
       # .DESCRIPTION
       # This is needed since VSTS "Tag build on success" is tagging ALL the builds. This, as a build task, can be conditionalized to only run on the master branches.
