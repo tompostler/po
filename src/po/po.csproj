@@ -7,6 +7,13 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
+  <!-- Registry Publish -->
+  <PropertyGroup>
+    <ContainerRegistry>hub.docker.com</ContainerRegistry>
+    <ContainerRepository>tompostler/onprem</ContainerRepository>
+    <ContainerImageTag>po-latest</ContainerImageTag>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" />
     <PackageReference Include="Discord.Net" />

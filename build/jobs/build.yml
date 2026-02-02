@@ -40,6 +40,20 @@ jobs:
       zipAfterPublish: true
       modifyOutputPath: true
 
+  - task: Docker@2
+    inputs:
+      containerRegistry: 6d165ea2-8078-41dd-baef-3f44bbc79e27
+      command: login
+
+  - task: DotNetCoreCLI@2
+    displayName: Build and publish image (linux-x64)
+    inputs:
+      command: publish
+      projects: src/po/po.csproj
+      arguments: '--runtime linux-x64 /t:PublishContainer'
+      zipAfterPublish: true
+      modifyOutputPath: true
+
   - task: PublishBuildArtifacts@1
     displayName: Publish build artifacts
     inputs:
