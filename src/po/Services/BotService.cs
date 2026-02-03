@@ -15,7 +15,7 @@ namespace po.Services
     public sealed class BotService : IHostedService
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoStorage poBlobStorage;
+        private readonly IPoStorage poBlobStorage;
         private readonly Sentinals sentinals;
         private readonly Dictionary<string, DiscordImpl.SlashCommands.SlashCommandBase> slashCommands;
         private readonly Options.Discord options;
@@ -26,7 +26,7 @@ namespace po.Services
 
         public BotService(
             IServiceProvider serviceProvider,
-            PoStorage poBlobStorage,
+            IPoStorage poBlobStorage,
             Sentinals sentinals,
             IEnumerable<DiscordImpl.SlashCommands.SlashCommandBase> slashCommands,
             IOptions<Options.Discord> options,

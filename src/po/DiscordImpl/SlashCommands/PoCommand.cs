@@ -12,13 +12,13 @@ namespace po.DiscordImpl.SlashCommands
     public class PoCommand : SlashCommandBase
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoStorage poStorage;
+        private readonly IPoStorage poStorage;
         private readonly Delays delays;
         private readonly ILogger<PoCommand> logger;
 
         public PoCommand(
             IServiceProvider serviceProvider,
-            PoStorage poBlobStorage,
+            IPoStorage poBlobStorage,
             Delays delays,
             ILogger<PoCommand> logger)
         {

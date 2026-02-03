@@ -12,7 +12,7 @@ namespace po.Services.Background
     {
         private const int BatchSize = 100;
 
-        private readonly PoStorage storage;
+        private readonly IPoStorage storage;
         private readonly Options.Discord discordOptions;
 
         public SyncBlobMetadataBackgroundService(
@@ -20,7 +20,7 @@ namespace po.Services.Background
             Sentinals sentinals,
             ILogger<SyncBlobMetadataBackgroundService> logger,
             TelemetryClient telemetryClient,
-            PoStorage storage,
+            IPoStorage storage,
             IOptions<Options.Discord> options)
             : base(serviceProvider, sentinals, logger, telemetryClient)
         {
@@ -112,7 +112,7 @@ namespace po.Services.Background
             }
         }
 
-        public static async Task FindAndAddNewBlobsAsync(IServiceProvider serviceProvider, PoStorage storage, ILogger logger, Dictionary<string, CountValue> counts, CancellationToken cancellationToken, string containerName = default)
+        public static async Task FindAndAddNewBlobsAsync(IServiceProvider serviceProvider, IPoStorage storage, ILogger logger, Dictionary<string, CountValue> counts, CancellationToken cancellationToken, string containerName = default)
         {
             List<Models.PoBlob> foundBlobs = new(BatchSize);
 

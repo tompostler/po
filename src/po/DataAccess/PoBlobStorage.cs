@@ -6,14 +6,14 @@ using System.Runtime.CompilerServices;
 
 namespace po.DataAccess
 {
-    public sealed class PoStorage
+    public sealed class PoBlobStorage : IPoStorage
     {
         private readonly BlobServiceClient blobServiceClient;
-        private readonly ILogger<PoStorage> logger;
+        private readonly ILogger<PoBlobStorage> logger;
 
-        public PoStorage(
+        public PoBlobStorage(
             IOptions<Options.Storage> options,
-            ILogger<PoStorage> logger)
+            ILogger<PoBlobStorage> logger)
         {
             this.blobServiceClient = new BlobServiceClient(options.Value.ConnectionString);
             this.logger = logger;
@@ -67,7 +67,7 @@ namespace po.DataAccess
         public async Task<bool> ContainerExistsAsync(string containerName)
             => await this.blobServiceClient.GetBlobContainerClient(containerName).ExistsAsync();
 
-        public Uri GetOneDayReadOnlySasUri(Models.PoBlob blob)
+        public Uri GetReadOnlyUri(Models.PoBlob blob)
             => this.blobServiceClient
                 .GetBlobContainerClient(blob.ContainerName)
                 .GetBlobClient(blob.Name)

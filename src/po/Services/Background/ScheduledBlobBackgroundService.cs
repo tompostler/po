@@ -12,7 +12,7 @@ namespace po.Services.Background
     public sealed class ScheduledBlobBackgroundService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoStorage poStorage;
+        private readonly IPoStorage poStorage;
         private readonly Delays delays;
         private readonly Sentinals sentinals;
         private readonly ILogger<ScheduledBlobBackgroundService> logger;
@@ -20,7 +20,7 @@ namespace po.Services.Background
 
         public ScheduledBlobBackgroundService(
             IServiceProvider serviceProvider,
-            PoStorage poStorage,
+            IPoStorage poStorage,
             Delays delays,
             Sentinals sentinals,
             ILogger<ScheduledBlobBackgroundService> logger,

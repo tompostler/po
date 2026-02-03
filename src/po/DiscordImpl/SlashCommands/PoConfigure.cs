@@ -10,12 +10,12 @@ namespace po.DiscordImpl.SlashCommands
     public class PoConfigure : SlashCommandBase
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly PoStorage poStorage;
+        private readonly IPoStorage poStorage;
         private readonly ILogger<PoConfigure> logger;
 
         public PoConfigure(
             IServiceProvider serviceProvider,
-            PoStorage poStorage,
+            IPoStorage poStorage,
             ILogger<PoConfigure> logger)
         {
             this.serviceProvider = serviceProvider;

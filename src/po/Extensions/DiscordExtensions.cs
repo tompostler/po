@@ -47,7 +47,7 @@ namespace po.Extensions
 
         public static async Task SendSingleImageAsync(
             IServiceProvider serviceProvider,
-            PoStorage poStorage,
+            IPoStorage poStorage,
             string containerName,
             string category,
             string username,
@@ -100,7 +100,7 @@ namespace po.Extensions
                 {
                     Title = blob.Name,
                     Description = $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}{nextImageInText}",
-                    ImageUrl = poStorage.GetOneDayReadOnlySasUri(blob).AbsoluteUri
+                    ImageUrl = poStorage.GetReadOnlyUri(blob).AbsoluteUri
                 };
                 await embedMessageResponse(builder.Build());
 
