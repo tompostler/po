@@ -9,7 +9,7 @@
 
   <!-- Registry Publish -->
   <PropertyGroup>
-    <ContainerRegistry>hub.docker.com</ContainerRegistry>
+    <ContainerRegistry>docker.io</ContainerRegistry>
     <ContainerRepository>tompostler/onprem</ContainerRepository>
     <ContainerImageTag>po-latest</ContainerImageTag>
   </PropertyGroup>
