@@ -9,5 +9,7 @@ namespace po.DataAccess
         Task<bool> ContainerExistsAsync(string containerName);
 
         Uri GetReadOnlyUri(Models.PoBlob blob);
+
+        Task<Models.PoBlob> UploadBlobAsync(string containerName, string blobName, Stream content, CancellationToken cancellationToken);
     }
 }

@@ -94,6 +94,39 @@ namespace po.DataAccess
         public Uri GetReadOnlyUri(Models.PoBlob blob)
             => new(this.baseUri, $"{blob.ContainerName}/{blob.Name}");
 
+        public async Task<Models.PoBlob> UploadBlobAsync(string containerName, string blobName, Stream content, CancellationToken cancellationToken)
+        {
+            string containerPath = Path.Combine(BasePath, containerName);
+            _ = Directory.CreateDirectory(containerPath);
+
+            string filePath = Path.Combine(containerPath, blobName.Replace('/', Path.DirectorySeparatorChar));
+            string directoryPath = Path.GetDirectoryName(filePath);
+            if (!string.IsNullOrEmpty(directoryPath))
+            {
+                _ = Directory.CreateDirectory(directoryPath);
+            }
+
+            using (FileStream fileStream = File.Create(filePath))
+            {
+                await content.CopyToAsync(fileStream, cancellationToken);
+            }
+
+            var fileInfo = new FileInfo(filePath);
+
+            return new Models.PoBlob
+            {
+                AccountName = AccountName,
+                ContainerName = containerName,
+                Name = blobName,
+                Category = blobName.Split('/', StringSplitOptions.RemoveEmptyEntries).First(),
+                CreatedOn = fileInfo.CreationTimeUtc,
+                LastModified = fileInfo.LastWriteTimeUtc,
+                LastSeen = DateTimeOffset.UtcNow,
+                ContentLength = fileInfo.Length,
+                ContentHash = await ComputeMd5HashAsync(filePath, cancellationToken)
+            };
+        }
+
         private static async Task<string> ComputeMd5HashAsync(string filePath, CancellationToken cancellationToken)
         {
             using var md5 = MD5.Create();

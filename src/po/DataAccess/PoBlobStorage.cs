@@ -58,7 +58,7 @@ namespace po.DataAccess
                     LastModified = blob.Properties.LastModified.Value,
                     LastSeen = DateTimeOffset.UtcNow,
                     ContentLength = blob.Properties.ContentLength.Value,
-                    ContentHash = blob.Properties.ContentHash?.Length > 0 ? BitConverter.ToString(blob.Properties.ContentHash).Replace("-", "").ToLower() : null
+                    ContentHash = blob.Properties.ContentHash?.Length > 0 ? Convert.ToHexStringLower(blob.Properties.ContentHash) : null
                 };
             }
             this.logger.LogInformation($"Enumerated {countBlobs} blobs in {blobContainerClient.Uri}");
@@ -72,5 +72,29 @@ namespace po.DataAccess
                 .GetBlobContainerClient(blob.ContainerName)
                 .GetBlobClient(blob.Name)
                 .GenerateSasUri(BlobSasPermissions.Read, DateTimeOffset.UtcNow.AddDays(1));
+
+        public async Task<Models.PoBlob> UploadBlobAsync(string containerName, string blobName, Stream content, CancellationToken cancellationToken)
+        {
+            BlobContainerClient containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
+            _ = await containerClient.CreateIfNotExistsAsync(cancellationToken: cancellationToken);
+
+            BlobClient blobClient = containerClient.GetBlobClient(blobName);
+            _ = await blobClient.UploadAsync(content, overwrite: true, cancellationToken);
+
+            BlobProperties properties = await blobClient.GetPropertiesAsync(cancellationToken: cancellationToken);
+
+            return new Models.PoBlob
+            {
+                AccountName = this.blobServiceClient.AccountName,
+                ContainerName = containerName,
+                Name = blobName,
+                Category = blobName.Split('/', StringSplitOptions.RemoveEmptyEntries).First(),
+                CreatedOn = properties.CreatedOn,
+                LastModified = properties.LastModified,
+                LastSeen = DateTimeOffset.UtcNow,
+                ContentLength = properties.ContentLength,
+                ContentHash = properties.ContentHash?.Length > 0 ? Convert.ToHexStringLower(properties.ContentHash) : null
+            };
+        }
     }
 }
