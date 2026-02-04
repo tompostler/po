@@ -134,9 +134,13 @@ namespace po.DataAccess
             };
         }
 
-        public Task<Stream> DownloadBlobAsync(string containerName, string blobName, CancellationToken cancellationToken)
+        public Task<Stream> DownloadBlobIfExistsAsync(string containerName, string blobName, CancellationToken cancellationToken)
         {
             string filePath = Path.Combine(BasePath, containerName, blobName.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(filePath))
+            {
+                return Task.FromResult<Stream>(null);
+            }
             return Task.FromResult<Stream>(File.OpenRead(filePath));
         }
 

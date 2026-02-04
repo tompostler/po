@@ -12,6 +12,6 @@ namespace po.DataAccess
 
         Task<Models.PoBlob> UploadBlobAsync(string containerName, string blobName, Stream content, CancellationToken cancellationToken);
 
-        Task<Stream> DownloadBlobAsync(string containerName, string blobName, CancellationToken cancellationToken);
+        Task<Stream> DownloadBlobIfExistsAsync(string containerName, string blobName, CancellationToken cancellationToken);
     }
 }

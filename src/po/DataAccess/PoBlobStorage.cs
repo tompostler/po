@@ -97,11 +97,16 @@ namespace po.DataAccess
             };
         }
 
-        public async Task<Stream> DownloadBlobAsync(string containerName, string blobName, CancellationToken cancellationToken)
+        public async Task<Stream> DownloadBlobIfExistsAsync(string containerName, string blobName, CancellationToken cancellationToken)
         {
             BlobClient blobClient = this.blobServiceClient
                 .GetBlobContainerClient(containerName)
                 .GetBlobClient(blobName);
+
+            if (!await blobClient.ExistsAsync(cancellationToken))
+            {
+                return null;
+            }
 
             return await blobClient.OpenReadAsync(cancellationToken: cancellationToken);
         }

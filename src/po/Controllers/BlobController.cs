@@ -37,10 +37,15 @@ namespace po.Controllers
             string blobName,
             CancellationToken cancellationToken)
         {
-            Stream stream = await this.storage.DownloadBlobAsync(
+            Stream stream = await this.storage.DownloadBlobIfExistsAsync(
                 containerName,
                 blobName,
                 cancellationToken);
+
+            if (stream == null)
+            {
+                return this.NotFound();
+            }
 
             return this.File(stream, "application/octet-stream", Path.GetFileName(blobName));
         }
