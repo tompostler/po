@@ -9,14 +9,17 @@ namespace po.DataAccess
         private const string BasePath = "/var/opt/po";
         private const string AccountName = "local";
 
+        private readonly string apiKey;
         private readonly Uri baseUri;
         private readonly ILogger<PoLocalStorage> logger;
 
         public PoLocalStorage(
-            IOptions<Options.Storage> options,
+            IOptions<Options.Api> apiOptions,
+            IOptions<Options.Storage> storageOptions,
             ILogger<PoLocalStorage> logger)
         {
-            this.baseUri = options.Value.BaseUri;
+            this.apiKey = apiOptions.Value.ApiKey;
+            this.baseUri = storageOptions.Value.BaseUri;
             this.logger = logger;
         }
 
@@ -91,8 +94,12 @@ namespace po.DataAccess
         public Task<bool> ContainerExistsAsync(string containerName)
             => Task.FromResult(Directory.Exists(Path.Combine(BasePath, containerName)));
 
-        public Uri GetReadOnlyUri(Models.PoBlob blob)
-            => new(this.baseUri, $"{blob.ContainerName}/{blob.Name}");
+        public Uri GetReadUriExpiresInOneDay(Models.PoBlob blob)
+        {
+            long expires = DateTimeOffset.UtcNow.AddDays(1).ToUnixTimeSeconds();
+            string signature = Utilities.SignedUrls.GenerateSignature(this.apiKey, blob.ContainerName, blob.Name, expires, this.logger);
+            return new Uri(this.baseUri, $"blob/{blob.ContainerName}/{blob.Name}?expires={expires}&sig={signature}");
+        }
 
         public async Task<Models.PoBlob> UploadBlobAsync(string containerName, string blobName, Stream content, CancellationToken cancellationToken)
         {
@@ -125,6 +132,12 @@ namespace po.DataAccess
                 ContentLength = fileInfo.Length,
                 ContentHash = await ComputeMd5HashAsync(filePath, cancellationToken)
             };
+        }
+
+        public Task<Stream> DownloadBlobAsync(string containerName, string blobName, CancellationToken cancellationToken)
+        {
+            string filePath = Path.Combine(BasePath, containerName, blobName.Replace('/', Path.DirectorySeparatorChar));
+            return Task.FromResult<Stream>(File.OpenRead(filePath));
         }
 
         private static async Task<string> ComputeMd5HashAsync(string filePath, CancellationToken cancellationToken)

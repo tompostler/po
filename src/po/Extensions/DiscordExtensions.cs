@@ -100,7 +100,7 @@ namespace po.Extensions
                 {
                     Title = blob.Name,
                     Description = $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}{nextImageInText}",
-                    ImageUrl = poStorage.GetReadOnlyUri(blob).AbsoluteUri
+                    ImageUrl = poStorage.GetReadUriExpiresInOneDay(blob).AbsoluteUri
                 };
                 await embedMessageResponse(builder.Build());
 

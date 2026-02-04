@@ -67,7 +67,7 @@ namespace po.DataAccess
         public async Task<bool> ContainerExistsAsync(string containerName)
             => await this.blobServiceClient.GetBlobContainerClient(containerName).ExistsAsync();
 
-        public Uri GetReadOnlyUri(Models.PoBlob blob)
+        public Uri GetReadUriExpiresInOneDay(Models.PoBlob blob)
             => this.blobServiceClient
                 .GetBlobContainerClient(blob.ContainerName)
                 .GetBlobClient(blob.Name)
@@ -95,6 +95,15 @@ namespace po.DataAccess
                 ContentLength = properties.ContentLength,
                 ContentHash = properties.ContentHash?.Length > 0 ? Convert.ToHexStringLower(properties.ContentHash) : null
             };
+        }
+
+        public async Task<Stream> DownloadBlobAsync(string containerName, string blobName, CancellationToken cancellationToken)
+        {
+            BlobClient blobClient = this.blobServiceClient
+                .GetBlobContainerClient(containerName)
+                .GetBlobClient(blobName);
+
+            return await blobClient.OpenReadAsync(cancellationToken: cancellationToken);
         }
     }
 }
