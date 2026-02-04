@@ -28,15 +28,6 @@ jobs:
       command: restore
       projects: src/po.slnx
 
-  - task: DotNetCoreCLI@2
-    displayName: Build and zip to the staging directory (linux-x64)
-    inputs:
-      command: publish
-      projects: src/po/po.csproj
-      arguments: '--no-restore --configuration Debug --runtime linux-x64 --output $(Build.ArtifactStagingDirectory) --no-self-contained'
-      zipAfterPublish: true
-      modifyOutputPath: true
-
   - task: Docker@2
     inputs:
       containerRegistry: 6d165ea2-8078-41dd-baef-3f44bbc79e27
@@ -50,13 +41,6 @@ jobs:
       arguments: '--runtime linux-x64 /t:PublishContainer'
       zipAfterPublish: true
       modifyOutputPath: true
-
-  - task: PublishBuildArtifacts@1
-    displayName: Publish build artifacts
-    inputs:
-      pathToPublish: $(Build.ArtifactStagingDirectory)
-      artifactName: drop
-      publishLocation: Container
 
 
 - job: TagSource
