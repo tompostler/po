@@ -12,6 +12,7 @@
     <ContainerRegistry>docker.io</ContainerRegistry>
     <ContainerRepository>tompostler/onprem</ContainerRepository>
     <ContainerImageTag>po-latest</ContainerImageTag>
+    <ContainerUser>root</ContainerUser>
   </PropertyGroup>
 
   <ItemGroup>

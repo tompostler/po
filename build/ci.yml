@@ -26,10 +26,10 @@ stages:
   jobs:
   - template: jobs/deploy-prereqs.yml
 
-- stage: Deploy_Code
-  dependsOn: [ Build, Deploy_PreReqs ]
-  displayName: Deploy Code
-  variables:
-  - group: tompostler
-  jobs:
-  - template: jobs/deploy-code.yml
+# - stage: Deploy_Code
+#   dependsOn: [ Build, Deploy_PreReqs ]
+#   displayName: Deploy Code
+#   variables:
+#   - group: tompostler
+#   jobs:
+#   - template: jobs/deploy-code.yml
