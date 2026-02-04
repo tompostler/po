@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using po.DiscordImpl;
-using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace po

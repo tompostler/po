@@ -5,7 +5,6 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Options;
 using po.Extensions;
 using po.Utilities;
-using System.Diagnostics;
 
 namespace po.Services
 {
