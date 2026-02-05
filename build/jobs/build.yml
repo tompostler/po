@@ -42,6 +42,25 @@ jobs:
       zipAfterPublish: true
       modifyOutputPath: true
 
+  - powershell: |
+      $shortSha = '$(Build.SourceVersion)'.Substring(0, 7);
+      $body = @{
+        Title = "Publishing of po $(Build.BuildNumber)+$shortSha was successful";
+        Description = "``$(Build.SourceVersionMessage)``";
+      } | ConvertTo-Json -Compress;
+      Invoke-RestMethod -Method Post -Uri https://po.tcp.wtf/randommessage -Headers @{ 'x-api-key' = '$(pobot-api-key)' } -ContentType 'application/json' -Body $body;
+    displayName: Post publishing message (success)
+
+  - powershell: |
+      $shortSha = '$(Build.SourceVersion)'.Substring(0, 7);
+      $body = @{
+        Title = "Publishing of po $(Build.BuildNumber)+$shortSha was successful";
+        Description = "``$(Build.SourceVersionMessage)``";
+      } | ConvertTo-Json -Compress;
+      Invoke-RestMethod -Method Post -Uri https://po.tcp.wtf/randommessage -Headers @{ 'x-api-key' = '$(pobot-api-key)' } -ContentType 'application/json' -Body $body;
+    condition: failed()
+    displayName: Post publishing message (failure)
+
 
 - job: TagSource
   dependsOn: DotnetBuild
