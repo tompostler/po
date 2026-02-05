@@ -144,6 +144,17 @@ namespace po.DataAccess
             return Task.FromResult<Stream>(File.OpenRead(filePath));
         }
 
+        public Task<bool> DeleteBlobIfExistsAsync(string containerName, string blobName, CancellationToken cancellationToken)
+        {
+            string filePath = Path.Combine(BasePath, containerName, blobName.Replace('/', Path.DirectorySeparatorChar));
+            if (!File.Exists(filePath))
+            {
+                return Task.FromResult(false);
+            }
+            File.Delete(filePath);
+            return Task.FromResult(true);
+        }
+
         private static async Task<string> ComputeMd5HashAsync(string filePath, CancellationToken cancellationToken)
         {
             using var md5 = MD5.Create();

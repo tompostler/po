@@ -68,5 +68,24 @@ namespace po.Controllers
 
             return this.File(stream, "application/octet-stream", Path.GetFileName(blobName));
         }
+
+        [HttpDelete("{containerName}/{*blobName}")]
+        public async Task<IActionResult> Delete(
+            string containerName,
+            string blobName,
+            CancellationToken cancellationToken)
+        {
+            bool deleted = await this.storage.DeleteBlobIfExistsAsync(
+                containerName,
+                blobName,
+                cancellationToken);
+
+            if (!deleted)
+            {
+                return this.NotFound();
+            }
+
+            return this.NoContent();
+        }
     }
 }

@@ -68,12 +68,19 @@ foreach ($blob in $existingBlobs) {
 $uploaded = 0;
 $skipped = 0;
 $overwritten = 0;
+$deleted = 0;
+
+# Track local blob names for deletion check
+$localBlobNames = @{};
 
 # Process each file
 foreach ($file in $localFiles) {
     # Compute relative path for blob name (use forward slashes)
     $relativePath = $file.FullName.Substring($SourcePath.Length).TrimStart('\', '/');
     $blobName = $relativePath.Replace('\', '/');
+
+    # Track this blob name
+    $localBlobNames[$blobName] = $true;
 
     # Compute MD5 hash
     $md5 = [System.Security.Cryptography.MD5]::Create();
@@ -111,10 +118,21 @@ foreach ($file in $localFiles) {
     $null = Invoke-RestMethod -Uri $uploadUri -Headers $headers -Method Post -Body $fileBytes -ContentType 'application/octet-stream';
 }
 
+# Delete blobs that no longer exist locally
+foreach ($blob in $existingBlobs) {
+    if (-not $localBlobNames.ContainsKey($blob.name)) {
+        Write-Host -ForegroundColor Red "Deleting (removed from disk): $($blob.name)";
+        $deleteUri = "$BaseUri/blob/$ContainerName/$($blob.name)";
+        $null = Invoke-RestMethod -Uri $deleteUri -Headers $headers -Method Delete;
+        $deleted++;
+    }
+}
+
 # Summary
 Write-Host;
 Write-Host -ForegroundColor Cyan '=== Summary ===';
 Write-Host -ForegroundColor Green "Uploaded:    $uploaded";
 Write-Host -ForegroundColor Yellow "Overwritten: $overwritten";
 Write-Host -ForegroundColor DarkGray "Skipped:     $skipped";
-Write-Host -ForegroundColor Cyan "Total:       $($uploaded + $overwritten + $skipped)";
+Write-Host -ForegroundColor Red "Deleted:     $deleted";
+Write-Host -ForegroundColor Cyan "Total:       $($uploaded + $overwritten + $skipped + $deleted)";

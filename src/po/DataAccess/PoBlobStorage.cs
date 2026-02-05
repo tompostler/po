@@ -110,5 +110,15 @@ namespace po.DataAccess
 
             return await blobClient.OpenReadAsync(cancellationToken: cancellationToken);
         }
+
+        public async Task<bool> DeleteBlobIfExistsAsync(string containerName, string blobName, CancellationToken cancellationToken)
+        {
+            BlobClient blobClient = this.blobServiceClient
+                .GetBlobContainerClient(containerName)
+                .GetBlobClient(blobName);
+
+            Azure.Response<bool> response = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+            return response.Value;
+        }
     }
 }
