@@ -2,6 +2,7 @@
 {
     public sealed class Delays
     {
+        public DelayImpelmentation RandomMessage { get; } = new();
         public DelayImpelmentation ScheduledBlob { get; } = new();
         public DelayImpelmentation ScheduledMessage { get; } = new();
 

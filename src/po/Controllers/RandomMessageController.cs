@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using po.Attributes;
 using po.DataAccess;
+using po.Utilities;
 
 namespace po.Controllers
 {
@@ -9,10 +10,14 @@ namespace po.Controllers
     [ApiKeyOrSignedUrlAuthorization]
     public sealed class RandomMessageController : ControllerBase
     {
+        private readonly Delays delays;
         private readonly PoContext dbContext;
 
-        public RandomMessageController(PoContext dbContext)
+        public RandomMessageController(
+            Delays delays,
+            PoContext dbContext)
         {
+            this.delays = delays;
             this.dbContext = dbContext;
         }
 
@@ -21,6 +26,7 @@ namespace po.Controllers
         {
             _ = this.dbContext.RandomMessages.Add(message);
             _ = await this.dbContext.SaveChangesAsync(cancellationToken);
+            this.delays.RandomMessage.CancelDelay();
             return this.Ok(message);
         }
     }

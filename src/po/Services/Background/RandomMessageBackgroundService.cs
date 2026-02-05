@@ -14,6 +14,7 @@ namespace po.Services.Background
     public sealed class RandomMessageBackgroundService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
+        private readonly Delays delays;
         private readonly Sentinals sentinals;
         private readonly Options.Discord options;
         private readonly ILogger<RandomMessageBackgroundService> logger;
@@ -21,12 +22,14 @@ namespace po.Services.Background
 
         public RandomMessageBackgroundService(
             IServiceProvider serviceProvider,
+            Delays delays,
             Sentinals sentinals,
             IOptions<Options.Discord> options,
             ILogger<RandomMessageBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
+            this.delays = delays;
             this.sentinals = sentinals;
             this.options = options.Value;
             this.logger = logger;
@@ -90,7 +93,7 @@ namespace po.Services.Background
                     }
                     // The delay should be at least 1 minute
                     delay = TimeSpan.FromMinutes(Math.Max(1, delay.TotalMinutes));
-                    // but less than an hour
+                    // but less than 1 hour
                     delay = TimeSpan.FromHours(Math.Min(1, delay.TotalHours));
                 }
                 catch (Exception ex)
@@ -98,8 +101,7 @@ namespace po.Services.Background
                     this.logger.LogError(ex, "Could not send message.");
                 }
 
-                this.logger.LogInformation($"Sleeping {delay} until the next iteration.");
-                await Task.Delay(delay, stoppingToken);
+                await this.delays.RandomMessage.Delay(delay, this.logger, stoppingToken);
             }
         }
     }
