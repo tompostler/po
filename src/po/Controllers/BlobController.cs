@@ -31,6 +31,25 @@ namespace po.Controllers
             return this.Ok(result);
         }
 
+        [HttpGet("{containerName}")]
+        public async Task<IActionResult> List(
+            string containerName,
+            CancellationToken cancellationToken)
+        {
+            if (!await this.storage.ContainerExistsAsync(containerName))
+            {
+                return this.NotFound();
+            }
+
+            var blobs = new List<Models.PoBlob>();
+            await foreach (Models.PoBlob blob in this.storage.EnumerateAllBlobsAsync(containerName, cancellationToken))
+            {
+                blobs.Add(blob);
+            }
+
+            return this.Ok(blobs);
+        }
+
         [HttpGet("{containerName}/{*blobName}")]
         public async Task<IActionResult> Download(
             string containerName,
