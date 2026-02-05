@@ -34,7 +34,7 @@ namespace po.DataAccess
             _ = modelBuilder.Entity<PoBlob>()
                 .HasKey(x => new { x.AccountName, x.ContainerName, x.Name });
 
-            _ = modelBuilder.HasSequence<long>("RandomMessageIds");
+            _ = modelBuilder.HasSequence<long>("RandomMessageIds").StartsAt(600);
 
             _ = modelBuilder.Entity<RandomMessage>()
                 .Property(x => x.Id)
@@ -44,7 +44,7 @@ namespace po.DataAccess
                 .Property(x => x.CreatedDate)
                 .HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
-            _ = modelBuilder.HasSequence<long>("ScheduledBlobIds");
+            _ = modelBuilder.HasSequence<long>("ScheduledBlobIds").StartsAt(1200);
 
             _ = modelBuilder.Entity<ScheduledBlob>()
                 .Property(x => x.Id)
@@ -54,7 +54,7 @@ namespace po.DataAccess
                 .Property(x => x.CreatedDate)
                 .HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
-            _ = modelBuilder.HasSequence<long>("ScheduledMessageIds");
+            _ = modelBuilder.HasSequence<long>("ScheduledMessageIds").StartsAt(10);
 
             _ = modelBuilder.Entity<ScheduledMessage>()
                 .Property(x => x.Id)

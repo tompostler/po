@@ -26,9 +26,10 @@ namespace po.Attributes
                 return;
             }
 
-            // Check for API key header
-            bool hasApiKeyHeader = context.HttpContext.Request.Headers.TryGetValue(ApiKeyHeaderName, out StringValues providedApiKey);
-            if (hasApiKeyHeader)
+            // Check for API key header or query parameter
+            bool hasApiKey = context.HttpContext.Request.Headers.TryGetValue(ApiKeyHeaderName, out StringValues providedApiKey)
+                || context.HttpContext.Request.Query.TryGetValue(ApiKeyHeaderName, out providedApiKey);
+            if (hasApiKey)
             {
                 if (string.Equals(configuredApiKey, providedApiKey, StringComparison.Ordinal))
                 {
