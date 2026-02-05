@@ -4,6 +4,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using po.DataAccess;
 using po.Extensions;
 using po.Utilities;
@@ -14,17 +15,20 @@ namespace po.Services.Background
     {
         private readonly IServiceProvider serviceProvider;
         private readonly Sentinals sentinals;
+        private readonly Options.Discord options;
         private readonly ILogger<RandomMessageBackgroundService> logger;
         private readonly TelemetryClient telemetryClient;
 
         public RandomMessageBackgroundService(
             IServiceProvider serviceProvider,
             Sentinals sentinals,
+            IOptions<Options.Discord> options,
             ILogger<RandomMessageBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
             this.sentinals = sentinals;
+            this.options = options.Value;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
         }
@@ -67,7 +71,7 @@ namespace po.Services.Background
                             };
 
                             await discordClient.SendEmbedMessageAsync(
-                                randomMessage.ChannelId,
+                                this.options.BotNotificationChannelId,
                                 embedBuilder.Build(),
                                 this.logger,
                                 stoppingToken);

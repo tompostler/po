@@ -9,9 +9,6 @@ namespace po.Models
         public long Id { get; set; }
 
         [Required]
-        public ulong ChannelId { get; set; }
-
-        [Required]
         [MaxLength(256)]
         public string Title { get; set; }
 
