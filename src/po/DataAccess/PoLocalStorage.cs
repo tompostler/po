@@ -52,6 +52,8 @@ namespace po.DataAccess
                 }
             }
 
+            DeleteEmptyDirectories(BasePath, this.logger);
+
             this.logger.LogInformation($"Enumerated {countTotalBlobs} blobs in {countContainers} containers in {BasePath}");
         }
 
@@ -87,6 +89,8 @@ namespace po.DataAccess
                     ContentHash = await ComputeMd5HashAsync(filePath, cancellationToken)
                 };
             }
+
+            DeleteEmptyDirectories(containerPath, this.logger);
 
             this.logger.LogInformation($"Enumerated {countBlobs} blobs in {containerPath}");
         }
@@ -153,6 +157,19 @@ namespace po.DataAccess
             }
             File.Delete(filePath);
             return Task.FromResult(true);
+        }
+
+        private static void DeleteEmptyDirectories(string path, ILogger logger)
+        {
+            foreach (string directory in Directory.EnumerateDirectories(path))
+            {
+                DeleteEmptyDirectories(directory, logger);
+                if (!Directory.EnumerateFileSystemEntries(directory).Any())
+                {
+                    Directory.Delete(directory);
+                    logger.LogInformation($"Deleted empty directory: {directory}");
+                }
+            }
         }
 
         private static async Task<string> ComputeMd5HashAsync(string filePath, CancellationToken cancellationToken)
