@@ -28,10 +28,6 @@
         }
         public sealed class Storage
         {
-            // Uses azure blob storage
-            public string ConnectionString { get; set; }
-
-            // Uses local filesystem storage (/var/opt/po)
             public Uri BaseUri { get; set; }
         }
     }

@@ -32,22 +32,7 @@ namespace po
                       provider.GetRequiredService<IOptions<Options.Sql>>().Value.ConnectionString,
                       sqloptions => sqloptions
                           .EnableRetryOnFailure()));
-            _ = services.AddSingleton<DataAccess.IPoStorage>(provider =>
-            {
-                Options.Storage storageOptions = provider.GetRequiredService<IOptions<Options.Storage>>().Value;
-                if (!string.IsNullOrEmpty(storageOptions.ConnectionString))
-                {
-                    return ActivatorUtilities.CreateInstance<DataAccess.PoBlobStorage>(provider);
-                }
-                else if (storageOptions.BaseUri != null)
-                {
-                    return ActivatorUtilities.CreateInstance<DataAccess.PoLocalStorage>(provider);
-                }
-                else
-                {
-                    throw new InvalidOperationException("Storage configuration must specify either ConnectionString (for Azure Blob) or BaseUri (for local filesystem).");
-                }
-            });
+            _ = services.AddSingleton<DataAccess.IPoStorage, DataAccess.PoLocalStorage>();
 
             _ = services.AddSingleton<Utilities.Delays>();
             _ = services.AddSingleton<Utilities.Sentinals>();

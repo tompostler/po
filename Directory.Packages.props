@@ -5,8 +5,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Azure -->
-    <PackageVersion Include="Azure.Storage.Blobs" Version="12.27.0" />
     <!-- dotnet -->
     <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
