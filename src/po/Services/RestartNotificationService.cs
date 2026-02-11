@@ -35,7 +35,7 @@ namespace po.Services
 
             await discordClient.TrySendNotificationTextMessageOrFileAsync(
                 this.discordOptions,
-                $"I have been restarted on {Environment.MachineName}. v{ThisAssembly.AssemblyFileVersion}",
+                $"I have been restarted on {Environment.MachineName}. v{ThisAssembly.AssemblyInformationalVersion}",
                 this.logger,
                 stoppingToken);
         }

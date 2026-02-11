@@ -67,11 +67,13 @@ namespace po.Services.Background
 
                 foreach (Models.PoBlob toDelete in toDeletes)
                 {
-                    if (!counts.ContainsKey(toDelete.Category))
+                    if (!counts.TryGetValue(toDelete.Category, out CountValue value))
                     {
-                        counts.Add(toDelete.Category, new CountValue());
+                        value = new CountValue();
+                        counts.Add(toDelete.Category, value);
                     }
-                    counts[toDelete.Category].Removed++;
+
+                    value.Removed++;
                     _ = poContext.Blobs.Remove(toDelete);
                 }
 
