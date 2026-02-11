@@ -39,6 +39,7 @@ if ($Exclude.Count -gt 0) {
 $localFiles = Get-ChildItem @gciParams;
 
 Write-Host -ForegroundColor Cyan "Found $($localFiles.Count) local files to process";
+Start-Sleep -Seconds 1;
 
 # Get existing blobs from server
 $listUri = "$BaseUri/blob/$ContainerName";
@@ -57,6 +58,7 @@ catch {
         throw;
     }
 }
+Start-Sleep -Seconds 1;
 
 # Build lookup of existing blobs by name
 $existingBlobMap = @{};
@@ -115,7 +117,7 @@ foreach ($file in $localFiles) {
     # Upload the file
     $uploadUri = "$BaseUri/blob/$ContainerName/$blobName";
     $fileBytes = [System.IO.File]::ReadAllBytes($file.FullName);
-    $null = Invoke-RestMethod -Uri $uploadUri -Headers $headers -Method Post -Body $fileBytes -ContentType 'application/octet-stream';
+    Invoke-RestMethod -Uri $uploadUri -Headers $headers -Method Post -Body $fileBytes -ContentType 'application/octet-stream' | Out-Null;
 }
 
 # Delete blobs that no longer exist locally
@@ -123,7 +125,7 @@ foreach ($blob in $existingBlobs) {
     if (-not $localBlobNames.ContainsKey($blob.name)) {
         Write-Host -ForegroundColor Red "Deleting (removed from disk): $($blob.name)";
         $deleteUri = "$BaseUri/blob/$ContainerName/$($blob.name)";
-        $null = Invoke-RestMethod -Uri $deleteUri -Headers $headers -Method Delete;
+        Invoke-RestMethod -Uri $deleteUri -Headers $headers -Method Delete | Out-Null;
         $deleted++;
     }
 }
@@ -136,3 +138,4 @@ Write-Host -ForegroundColor Yellow "Overwritten: $overwritten";
 Write-Host -ForegroundColor DarkGray "Skipped:     $skipped";
 Write-Host -ForegroundColor Red "Deleted:     $deleted";
 Write-Host -ForegroundColor Cyan "Total:       $($uploaded + $overwritten + $skipped + $deleted)";
+Write-Host;
