@@ -1,4 +1,7 @@
-﻿using Discord.WebSocket;
+﻿using System.Collections;
+using System.Security.Cryptography;
+using System.Text;
+using Discord.WebSocket;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -33,9 +36,21 @@ namespace po.Services
 
             DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
 
+            IDictionary envVars = Environment.GetEnvironmentVariables();
+            var envContent = new StringBuilder();
+            foreach (string key in envVars.Keys.Cast<string>().OrderBy(k => k, StringComparer.OrdinalIgnoreCase))
+            {
+                _ = envContent
+                    .Append(key)
+                    .Append('=')
+                    .Append(envVars[key])
+                    .Append('\n');
+            }
+            string envHashSubstring = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(envContent.ToString())))[..12];
+
             await discordClient.TrySendNotificationTextMessageOrFileAsync(
                 this.discordOptions,
-                $"I have been restarted on {Environment.MachineName}. v{ThisAssembly.AssemblyInformationalVersion}",
+                $"I have been restarted on {Environment.MachineName}. v{ThisAssembly.AssemblyInformationalVersion}. env({envVars.Count}):{envHashSubstring}",
                 this.logger,
                 stoppingToken);
         }
