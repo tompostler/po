@@ -11,6 +11,7 @@ namespace po.Services.Background
     public sealed class SyncBlobMetadataBackgroundService : SqlSynchronizedBackgroundService
     {
         private const int BatchSize = 100;
+        private static readonly TimeSpan MinInterval = TimeSpan.FromHours(1);
 
         private readonly IPoStorage storage;
         private readonly Options.Discord discordOptions;
@@ -28,7 +29,8 @@ namespace po.Services.Background
             this.discordOptions = options.Value;
         }
 
-        protected override TimeSpan Interval => TimeSpan.FromDays(1);
+        private TimeSpan interval = TimeSpan.FromDays(1);
+        protected override TimeSpan Interval => this.interval;
 
         public sealed class CountValue
         {
@@ -45,7 +47,7 @@ namespace po.Services.Background
             await FindAndAddNewBlobsAsync(this.serviceProvider, this.storage, this.logger, counts, cancellationToken);
 
             // Remove any that we haven't seen for more than 3 scrape intervals
-            DateTimeOffset tooOld = DateTimeOffset.UtcNow.AddDays(this.Interval.TotalDays * -3);
+            DateTimeOffset tooOld = DateTimeOffset.UtcNow.AddDays(this.interval.TotalDays * -3);
             using (IServiceScope scope = this.serviceProvider.CreateScope())
             using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
             {
@@ -53,7 +55,8 @@ namespace po.Services.Background
 
                 if (toDeletes.Count > BatchSize)
                 {
-                    this.logger.LogWarning($"Found {toDeletes.Count} old blobs to remove. Only removing {BatchSize} to avoid SQL timeout.");
+                    this.interval = TimeSpan.FromHours(Math.Max(MinInterval.TotalHours, this.interval.TotalHours / 2));
+                    this.logger.LogWarning($"Found {toDeletes.Count} old blobs to remove. Only removing {BatchSize} to avoid SQL timeout and reducing interval to {this.interval}.");
                     toDeletes = toDeletes.Take(BatchSize).ToList();
                 }
                 if (toDeletes.Count > 0)
@@ -63,6 +66,7 @@ namespace po.Services.Background
                 else
                 {
                     this.logger.LogInformation("Found no old blobs to remove.");
+                    this.interval = TimeSpan.FromDays(1);
                 }
 
                 foreach (Models.PoBlob toDelete in toDeletes)
