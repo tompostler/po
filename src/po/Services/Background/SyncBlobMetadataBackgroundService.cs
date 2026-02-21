@@ -85,7 +85,7 @@ namespace po.Services.Background
             }
 
             // Report on what we did
-            string report = BuildReportFromCounts(counts, this.logger);
+            string report = BuildReportFromCounts(counts, this.logger, $"Running again in {this.interval.TotalHours:0.0}h.");
             if (report != default)
             {
                 Discord.WebSocket.DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(cancellationToken);
@@ -93,7 +93,7 @@ namespace po.Services.Background
             }
         }
 
-        public static string BuildReportFromCounts(Dictionary<string, CountValue> counts, ILogger logger)
+        public static string BuildReportFromCounts(Dictionary<string, CountValue> counts, ILogger logger, string suffix = null)
         {
             if (counts.Values.Any(x => x.Added > 0 || x.Removed > 0))
             {
@@ -109,6 +109,11 @@ namespace po.Services.Background
                 }
                 _ = sb.AppendLine($"{"TOTAL".PadRight(catLen)}  {counts.Values.Sum(x => x.Added).ToString().PadLeft(numLen)}  {counts.Values.Sum(x => x.Removed).ToString().PadLeft(numLen)}  {counts.Values.Sum(x => x.Total).ToString().PadLeft(numLen)}");
                 _ = sb.AppendLine("```");
+                if (suffix != null)
+                {
+                    _ = sb.AppendLine();
+                    _ = sb.AppendLine(suffix);
+                }
                 return sb.ToString();
             }
             else
