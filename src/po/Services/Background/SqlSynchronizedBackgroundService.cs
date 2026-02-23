@@ -64,9 +64,12 @@ namespace po.Services.Background
                 {
                     CancellationToken linkedToken = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, new CancellationTokenSource(this.Interval).Token).Token;
                     await this.ExecuteOnceAsync(linkedToken);
+                    op.Telemetry.Success = true;
                 }
                 catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
                 {
+                    op.Telemetry.Success = false;
+                    op.Telemetry.Properties["Exception"] = ex.ToString();
                     this.logger.LogError(ex, "Failed execution.");
                 }
             }
