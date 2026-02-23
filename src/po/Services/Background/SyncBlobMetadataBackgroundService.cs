@@ -11,7 +11,7 @@ namespace po.Services.Background
     public sealed class SyncBlobMetadataBackgroundService : SqlSynchronizedBackgroundService
     {
         private const int BatchSize = 100;
-        private static readonly TimeSpan MinInterval = TimeSpan.FromHours(1);
+        private static readonly TimeSpan MinInterval = TimeSpan.FromHours(2);
 
         private readonly IPoStorage storage;
         private readonly Options.Discord discordOptions;
