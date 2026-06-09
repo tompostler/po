@@ -3,10 +3,16 @@ jobs:
 - job: DotnetBuild
   steps:
 
+  - pwsh: |
+      Get-ChildItem -Path Env: | ForEach-Object {
+        Write-Host "$($_.Name) = $($_.Value)";
+      }
+    displayName: Show env vars
+
   - task: UseDotNet@2
-    displayName: Use net10
+    displayName: Use dotnet from global.json
     inputs:
-      version: 10.x
+      useGlobalJson: true
 
   - powershell: |
       dotnet tool install nbgv --global --version 3.9.*;
