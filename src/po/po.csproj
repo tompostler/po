@@ -8,8 +8,8 @@
 
   <!-- Registry Publish -->
   <PropertyGroup>
-    <!-- Use smaller image than standard mcr.microsoft.com/dotnet/aspnet:10.0 -->
-    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled</ContainerBaseImage>
+    <!-- Use smaller image than standard mcr.microsoft.com/dotnet/aspnet:10.0. bot appears to be crashing on this. -->
+    <!-- <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled</ContainerBaseImage> -->
     <ContainerRegistry>docker.io</ContainerRegistry>
     <ContainerRepository>tompostler/onprem</ContainerRepository>
     <ContainerImageTag>po-latest</ContainerImageTag>
