@@ -3,15 +3,17 @@
   <PropertyGroup>
     <RootNamespace>po</RootNamespace>
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
-    <DebugType>full</DebugType>
-    <DebugSymbols>true</DebugSymbols>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <!-- Registry Publish -->
   <PropertyGroup>
+    <!-- Use smaller image than standard mcr.microsoft.com/dotnet/aspnet:10.0 -->
+    <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled</ContainerBaseImage>
     <ContainerRegistry>docker.io</ContainerRegistry>
     <ContainerRepository>tompostler/onprem</ContainerRepository>
     <ContainerImageTag>po-latest</ContainerImageTag>
+    <!-- Sure we could run more safely, but this is easier so we don't have to worry about file pathing permissions in the volumes. -->
     <ContainerUser>root</ContainerUser>
   </PropertyGroup>
 
