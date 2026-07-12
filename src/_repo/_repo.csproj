@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <None Include="$(RepoRoot)\.claude\**\*" Link=".claude\%(RecursiveDir)\%(Filename)%(Extension)" />
+    <None Include="$(RepoRoot)\.config\**\*" Link=".config\%(RecursiveDir)\%(Filename)%(Extension)" />
     <None Include="$(RepoRoot)\build\**\*" Link="build\%(RecursiveDir)\%(Filename)%(Extension)" />
     <None Include="$(RepoRoot)\deployment\**\*" Link="deployment\%(RecursiveDir)\%(Filename)%(Extension)" />
     <None Include="$(RepoRoot)\src\*" Link="src\%(RecursiveDir)\%(Filename)%(Extension)" />

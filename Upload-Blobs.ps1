@@ -145,11 +145,11 @@ end {
 
   # Summary
   Write-Host;
-  Write-Host -ForegroundColor Cyan '=== Summary ===';
-  Write-Host -ForegroundColor Green "Uploaded:    $uploaded";
-  Write-Host -ForegroundColor Yellow "Overwritten: $overwritten";
-  Write-Host -ForegroundColor DarkGray "Skipped:     $skipped";
-  Write-Host -ForegroundColor Red "Deleted:     $deleted";
-  Write-Host -ForegroundColor Cyan "Total:       $($uploaded + $overwritten + $skipped + $deleted)";
+  Write-Host '=== Summary ===' -ForegroundColor Cyan;
+  Write-Host "Uploaded:    $uploaded" -ForegroundColor Green;
+  Write-Host "Overwritten: $overwritten" -ForegroundColor Yellow;
+  Write-Host "Skipped:     $skipped" -ForegroundColor DarkGray;
+  Write-Host "Deleted:     $deleted" -ForegroundColor Red;
+  Write-Host"Total:       $($uploaded + $overwritten + $skipped + $deleted)" -ForegroundColor Cyan ;
   Write-Host;
 }

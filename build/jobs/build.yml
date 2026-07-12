@@ -15,7 +15,7 @@ jobs:
       useGlobalJson: true
 
   - powershell: |
-      dotnet tool install nbgv --global --version 3.9.*;
+      dotnet tool install nbgv --global --version 3.10.*;
       nbgv cloud --all-vars;
     displayName: nbgv
 
