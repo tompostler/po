@@ -2,11 +2,11 @@
 {
     public sealed class Delays
     {
-        public DelayImpelmentation RandomMessage { get; } = new();
-        public DelayImpelmentation ScheduledBlob { get; } = new();
-        public DelayImpelmentation ScheduledMessage { get; } = new();
+        public DelayImplementation RandomMessage { get; } = new();
+        public DelayImplementation ScheduledBlob { get; } = new();
+        public DelayImplementation ScheduledMessage { get; } = new();
 
-        public sealed class DelayImpelmentation
+        public sealed class DelayImplementation
         {
             private TaskCompletionSource earlyTaskCompletionSource;
 
