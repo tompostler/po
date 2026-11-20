@@ -72,6 +72,33 @@ namespace po.Services.Po
                 this.poStorage.GetReadUriExpiresInOneDay(blob));
         }
 
+        /// <summary>
+        /// Marks every seen image whose category starts with <paramref name="category"/> as unseen again.
+        /// Calls <paramref name="onCategoryReset"/> with a message after each category.
+        /// </summary>
+        /// <returns>A summary of the total reset.</returns>
+        public async Task<string> ResetSeenAsync(string containerName, string category, Func<string, Task> onCategoryReset)
+        {
+            using IServiceScope scope = this.serviceProvider.CreateScope();
+            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+
+            List<string> categoriesToReset = await poContext.Blobs
+                        .Where(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && x.Seen)
+                        .GroupBy(x => x.Category)
+                        .Select(g => g.Key)
+                        .ToListAsync();
+
+            int totalCountReset = 0;
+            foreach (string categoryToReset in categoriesToReset)
+            {
+                int countReset = await poContext.Database.ExecuteSqlRawAsync("UPDATE [Blobs] SET [Seen] = 0 WHERE [Category] = {0} AND [Seen] = 1", categoryToReset);
+                totalCountReset += countReset;
+                await onCategoryReset($"Reset view status for {countReset} images in the `{categoryToReset}` category.");
+            }
+
+            return $"Reset view status for {totalCountReset} total images across {categoriesToReset.Count} categories.";
+        }
+
         public async Task MarkSeenAsync(PoImage image)
         {
             using IServiceScope scope = this.serviceProvider.CreateScope();

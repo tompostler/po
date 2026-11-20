@@ -152,7 +152,10 @@ namespace po.DiscordImpl.SlashCommands
                     break;
 
                 case "reset":
-                    await HandleResetAsync(payload, command, category, poContext);
+                    _ = await payload.FollowupAsync(await this.poImageService.ResetSeenAsync(
+                        command.RegistrationData,
+                        category,
+                        (message) => payload.Channel.SendMessageAsync(message)));
                     break;
 
                 case "show":
@@ -242,25 +245,6 @@ namespace po.DiscordImpl.SlashCommands
                         CancellationToken.None);
                     break;
             }
-        }
-
-        private static async Task HandleResetAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
-        {
-            List<string> categoriesToReset = await poContext.Blobs
-                        .Where(x => x.ContainerName == command.RegistrationData && x.Category.StartsWith(category ?? string.Empty) && x.Seen)
-                        .GroupBy(x => x.Category)
-                        .Select(g => g.Key)
-                        .ToListAsync();
-
-            int totalCountReset = 0;
-            foreach (string categoryToReset in categoriesToReset)
-            {
-                int countReset = await poContext.Database.ExecuteSqlRawAsync("UPDATE [Blobs] SET [Seen] = 0 WHERE [Category] = {0} AND [Seen] = 1", categoryToReset);
-                totalCountReset += countReset;
-                _ = await payload.Channel.SendMessageAsync($"Reset view status for {countReset} images in the `{categoryToReset}` category.");
-            }
-
-            _ = await payload.FollowupAsync($"Reset view status for {totalCountReset} total images across {categoriesToReset.Count} categories.");
         }
 
         private async Task HandleStatusAsync(SocketSlashCommand payload, SlashCommandChannel command, PoContext poContext)
