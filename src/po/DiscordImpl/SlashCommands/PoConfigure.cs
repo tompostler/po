@@ -3,6 +3,7 @@ using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using po.DataAccess;
 using po.Models;
+using po.Services.Po;
 using System.Text;
 
 namespace po.DiscordImpl.SlashCommands
@@ -11,16 +12,16 @@ namespace po.DiscordImpl.SlashCommands
     {
         private readonly IServiceProvider serviceProvider;
         private readonly IPoStorage poStorage;
-        private readonly ILogger<PoConfigure> logger;
+        private readonly PoBlobSync poBlobSync;
 
         public PoConfigure(
             IServiceProvider serviceProvider,
             IPoStorage poStorage,
-            ILogger<PoConfigure> logger)
+            PoBlobSync poBlobSync)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poStorage;
-            this.logger = logger;
+            this.poBlobSync = poBlobSync;
         }
 
         public override SlashCommand ExpectedCommand => new()
@@ -105,9 +106,9 @@ namespace po.DiscordImpl.SlashCommands
             else if (operation == "rescan")
             {
                 await payload.DeferAsync();
-                Dictionary<string, Services.Background.SyncBlobMetadataBackgroundService.CountValue> counts = new();
-                await Services.Background.SyncBlobMetadataBackgroundService.FindAndAddNewBlobsAsync(this.serviceProvider, this.poStorage, this.logger, counts, CancellationToken.None, containerName: command.RegistrationData);
-                string response = Services.Background.SyncBlobMetadataBackgroundService.BuildReportFromCounts(counts, this.logger);
+                Dictionary<string, PoBlobSync.CountValue> counts = new();
+                await this.poBlobSync.FindAndAddNewBlobsAsync(counts, CancellationToken.None, containerName: command.RegistrationData);
+                string response = this.poBlobSync.BuildReportFromCounts(counts);
 
                 if (response?.Length > 2000)
                 {
