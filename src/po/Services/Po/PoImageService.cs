@@ -5,6 +5,12 @@ namespace po.Services.Po
 {
     public sealed class PoImageService
     {
+        /// <summary>
+        /// How long a posted image link stays valid.
+        /// Chat clients load the image from the link whenever the message is viewed, so a short lifetime breaks images in channel history.
+        /// </summary>
+        private static readonly TimeSpan ImageLinkLifetime = TimeSpan.FromDays(7);
+
         private readonly IServiceProvider serviceProvider;
         private readonly IPoStorage poStorage;
 
@@ -69,7 +75,7 @@ namespace po.Services.Po
                 blob,
                 blob.Name,
                 $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}{nextImageInText}",
-                this.poStorage.GetReadUriExpiresInOneDay(blob));
+                this.poStorage.GetReadUri(blob, ImageLinkLifetime));
         }
 
         /// <summary>

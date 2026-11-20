@@ -98,9 +98,9 @@ namespace po.DataAccess
         public Task<bool> ContainerExistsAsync(string containerName)
             => Task.FromResult(Directory.Exists(Path.Combine(BasePath, containerName)));
 
-        public Uri GetReadUriExpiresInOneDay(Models.PoBlob blob)
+        public Uri GetReadUri(Models.PoBlob blob, TimeSpan lifetime)
         {
-            long expires = DateTimeOffset.UtcNow.AddDays(1).ToUnixTimeSeconds();
+            long expires = DateTimeOffset.UtcNow.Add(lifetime).ToUnixTimeSeconds();
             string signature = Utilities.SignedUrls.GenerateSignature(this.apiKey, blob.ContainerName, blob.Name, expires, this.logger);
             return new Uri(this.baseUri, $"blob/{blob.ContainerName}/{blob.Name}?expires={expires}&sig={signature}");
         }

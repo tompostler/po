@@ -8,7 +8,7 @@ namespace po.DataAccess
 
         Task<bool> ContainerExistsAsync(string containerName);
 
-        Uri GetReadUriExpiresInOneDay(Models.PoBlob blob);
+        Uri GetReadUri(Models.PoBlob blob, TimeSpan lifetime);
 
         Task<Models.PoBlob> UploadBlobAsync(string containerName, string blobName, Stream content, CancellationToken cancellationToken);
 
