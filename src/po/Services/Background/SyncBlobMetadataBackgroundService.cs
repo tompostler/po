@@ -1,8 +1,7 @@
 ﻿using Microsoft.ApplicationInsights;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using po.Chat;
 using po.DataAccess;
-using po.Extensions;
 using po.Services.Po;
 using po.Utilities;
 
@@ -14,7 +13,7 @@ namespace po.Services.Background
         private static readonly TimeSpan MinInterval = TimeSpan.FromHours(2);
 
         private readonly PoBlobSync poBlobSync;
-        private readonly Options.Discord discordOptions;
+        private readonly ChatRouter chatRouter;
 
         public SyncBlobMetadataBackgroundService(
             IServiceProvider serviceProvider,
@@ -22,11 +21,11 @@ namespace po.Services.Background
             ILogger<SyncBlobMetadataBackgroundService> logger,
             TelemetryClient telemetryClient,
             PoBlobSync poBlobSync,
-            IOptions<Options.Discord> options)
+            ChatRouter chatRouter)
             : base(serviceProvider, sentinels, logger, telemetryClient)
         {
             this.poBlobSync = poBlobSync;
-            this.discordOptions = options.Value;
+            this.chatRouter = chatRouter;
         }
 
         private TimeSpan interval = TimeSpan.FromDays(1);
@@ -81,8 +80,7 @@ namespace po.Services.Background
             string report = this.poBlobSync.BuildReportFromCounts(counts, $"Running again in {this.interval.TotalHours:0.0}h.");
             if (report != default)
             {
-                Discord.WebSocket.DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(cancellationToken);
-                await discordClient.TrySendNotificationTextMessageOrFileAsync(this.discordOptions, report, this.logger, cancellationToken);
+                await this.chatRouter.SendNotificationAsync(report, cancellationToken);
             }
         }
     }
