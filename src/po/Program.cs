@@ -31,6 +31,9 @@ _ = services.AddSingleton<po.Services.Po.PoStatusReport>();
 _ = services.AddSingleton<po.Utilities.Delays>();
 _ = services.AddSingleton<po.Utilities.Sentinels>();
 
+_ = services.AddSingleton<po.Chat.IChatPlatform, po.Platforms.Discord.DiscordPlatform>();
+_ = services.AddSingleton<po.Chat.ChatRouter>();
+
 _ = services.AddHostedService<po.Services.BotService>();
 _ = services.AddHostedService<po.Services.MigrationService>();
 _ = services.AddHostedService<po.Services.RestartNotificationService>();
