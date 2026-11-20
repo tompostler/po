@@ -10,25 +10,25 @@ namespace po.Services.Background
     public abstract class SqlSynchronizedBackgroundService : BackgroundService
     {
         protected readonly IServiceProvider serviceProvider;
-        protected readonly Sentinals sentinals;
+        protected readonly Sentinels sentinels;
         protected readonly ILogger logger;
         private readonly TelemetryClient telemetryClient;
 
         public SqlSynchronizedBackgroundService(
             IServiceProvider serviceProvider,
-            Sentinals sentinals,
+            Sentinels sentinels,
             ILogger logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
-            this.sentinals = sentinals;
+            this.sentinels = sentinels;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
         }
 
         protected override sealed async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await this.sentinals.DBMigration.WaitForCompletionAsync(stoppingToken);
+            await this.sentinels.DBMigration.WaitForCompletionAsync(stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {

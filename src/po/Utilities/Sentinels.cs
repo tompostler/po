@@ -1,23 +1,23 @@
 ﻿namespace po.Utilities
 {
-    public sealed class Sentinals
+    public sealed class Sentinels
     {
-        public SentinalImplementation DBMigration { get; } = new();
-        public SentinalImplementation<Discord.WebSocket.DiscordSocketClient> DiscordClient { get; } = new();
+        public SentinelImplementation DBMigration { get; } = new();
+        public SentinelImplementation<Discord.WebSocket.DiscordSocketClient> DiscordClient { get; } = new();
 
-        public sealed class SentinalImplementation
+        public sealed class SentinelImplementation
         {
             private readonly SemaphoreSlim semaphore;
             private readonly Task task;
 
-            public SentinalImplementation()
+            public SentinelImplementation()
             {
                 this.semaphore = new SemaphoreSlim(0, 1);
                 this.task = this.semaphore.WaitAsync();
             }
 
             /// <summary>
-            /// Should only be called once per sentinal.
+            /// Should only be called once per sentinel.
             /// Used to release any waiting to let the startup process continue.
             /// </summary>
             public void SignalCompletion()
@@ -36,7 +36,7 @@
             public bool IsReady => this.semaphore.CurrentCount > 0;
 
             /// <summary>
-            /// Await this if you need to wait for the sentinal.
+            /// Await this if you need to wait for the sentinel.
             /// If the cancellation token is cancelled, then what you were waiting for will not be ready.
             /// </summary>
             public async Task WaitForCompletionAsync(CancellationToken cancellationToken)
@@ -53,20 +53,20 @@
             }
         }
 
-        public sealed class SentinalImplementation<T>
+        public sealed class SentinelImplementation<T>
         {
             private readonly SemaphoreSlim semaphore;
             private readonly Task task;
             private T waitingFor;
 
-            public SentinalImplementation()
+            public SentinelImplementation()
             {
                 this.semaphore = new SemaphoreSlim(0, 1);
                 this.task = this.semaphore.WaitAsync();
             }
 
             /// <summary>
-            /// Should only be called once per sentinal.
+            /// Should only be called once per sentinel.
             /// Used to release any waiting to let the startup process continue.
             /// </summary>
             public void SignalCompletion(T thingThatIsNowReady)
@@ -87,7 +87,7 @@
             public bool IsReady => this.semaphore.CurrentCount > 0;
 
             /// <summary>
-            /// Await this if you need to wait for the sentinal and need something from it.
+            /// Await this if you need to wait for the sentinel and need something from it.
             /// </summary>
             public async Task<T> WaitForCompletionAsync(CancellationToken cancellationToken)
             {

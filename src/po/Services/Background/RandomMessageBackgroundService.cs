@@ -15,7 +15,7 @@ namespace po.Services.Background
     {
         private readonly IServiceProvider serviceProvider;
         private readonly Delays delays;
-        private readonly Sentinals sentinals;
+        private readonly Sentinels sentinels;
         private readonly Options.Discord options;
         private readonly ILogger<RandomMessageBackgroundService> logger;
         private readonly TelemetryClient telemetryClient;
@@ -23,14 +23,14 @@ namespace po.Services.Background
         public RandomMessageBackgroundService(
             IServiceProvider serviceProvider,
             Delays delays,
-            Sentinals sentinals,
+            Sentinels sentinels,
             IOptions<Options.Discord> options,
             ILogger<RandomMessageBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
             this.delays = delays;
-            this.sentinals = sentinals;
+            this.sentinels = sentinels;
             this.options = options.Value;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
@@ -38,7 +38,7 @@ namespace po.Services.Background
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await this.sentinals.DBMigration.WaitForCompletionAsync(stoppingToken);
+            await this.sentinels.DBMigration.WaitForCompletionAsync(stoppingToken);
 
             var delay = TimeSpan.FromMinutes(1);
             while (!stoppingToken.IsCancellationRequested)
@@ -53,7 +53,7 @@ namespace po.Services.Background
 
                         if (randomMessage != default)
                         {
-                            DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
+                            DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(stoppingToken);
 
                             Color? color = default;
                             if (Color.TryParse(randomMessage.Color, out Color parsedColor))

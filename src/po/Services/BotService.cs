@@ -16,7 +16,7 @@ namespace po.Services
     {
         private readonly IServiceProvider serviceProvider;
         private readonly IPoStorage poBlobStorage;
-        private readonly Sentinals sentinals;
+        private readonly Sentinels sentinels;
         private readonly Dictionary<string, DiscordImpl.SlashCommands.SlashCommandBase> slashCommands;
         private readonly Options.Discord options;
         private readonly ILogger<BotService> logger;
@@ -27,7 +27,7 @@ namespace po.Services
         public BotService(
             IServiceProvider serviceProvider,
             IPoStorage poBlobStorage,
-            Sentinals sentinals,
+            Sentinels sentinels,
             IEnumerable<DiscordImpl.SlashCommands.SlashCommandBase> slashCommands,
             IOptions<Options.Discord> options,
             ILogger<BotService> logger,
@@ -35,7 +35,7 @@ namespace po.Services
         {
             this.serviceProvider = serviceProvider;
             this.poBlobStorage = poBlobStorage;
-            this.sentinals = sentinals;
+            this.sentinels = sentinels;
             this.slashCommands = slashCommands.ToDictionary(x => x.ExpectedCommand.Name);
             this.options = options.Value;
             this.logger = logger;
@@ -131,14 +131,14 @@ namespace po.Services
 
             await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
             await this.RegisterSlashCommandsAsync(cancellationToken);
-            this.sentinals.DiscordClient.SignalCompletion(this.discordClient);
+            this.sentinels.DiscordClient.SignalCompletion(this.discordClient);
 
             this.discordClient.Ready -= () => this.DiscordClient_Ready(cancellationToken);
         }
 
         private async Task EnsureDataModelIsUpToDateAsync(CancellationToken cancellationToken)
         {
-            await this.sentinals.DBMigration.WaitForCompletionAsync(cancellationToken);
+            await this.sentinels.DBMigration.WaitForCompletionAsync(cancellationToken);
             this.logger.LogInformation("Migration completion signal received. Starting data sync.");
 
             IEnumerable<SocketTextChannel> allTextChannels = this.discordClient.Guilds.SelectMany(g => g.TextChannels);

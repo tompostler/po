@@ -14,7 +14,7 @@ namespace po.Services.Background
         private readonly IServiceProvider serviceProvider;
         private readonly IPoStorage poStorage;
         private readonly Delays delays;
-        private readonly Sentinals sentinals;
+        private readonly Sentinels sentinels;
         private readonly ILogger<ScheduledBlobBackgroundService> logger;
         private readonly TelemetryClient telemetryClient;
 
@@ -22,21 +22,21 @@ namespace po.Services.Background
             IServiceProvider serviceProvider,
             IPoStorage poStorage,
             Delays delays,
-            Sentinals sentinals,
+            Sentinels sentinels,
             ILogger<ScheduledBlobBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
             this.poStorage = poStorage;
             this.delays = delays;
-            this.sentinals = sentinals;
+            this.sentinels = sentinels;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await this.sentinals.DBMigration.WaitForCompletionAsync(stoppingToken);
+            await this.sentinels.DBMigration.WaitForCompletionAsync(stoppingToken);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -55,7 +55,7 @@ namespace po.Services.Background
 
                         if (nextScheduledBlob?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
-                            DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
+                            DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(stoppingToken);
                             var channel = discordClient.GetChannel(nextScheduledBlob.ChannelId) as SocketTextChannel;
 
                             TimeSpan? nextBlobIn = default;

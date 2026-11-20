@@ -35,7 +35,7 @@ namespace po
             _ = services.AddSingleton<DataAccess.IPoStorage, DataAccess.PoLocalStorage>();
 
             _ = services.AddSingleton<Utilities.Delays>();
-            _ = services.AddSingleton<Utilities.Sentinals>();
+            _ = services.AddSingleton<Utilities.Sentinels>();
 
             _ = services.AddHostedService<Services.BotService>();
             _ = services.AddHostedService<Services.MigrationService>();

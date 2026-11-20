@@ -13,18 +13,18 @@ namespace po.Services
 {
     public class RestartNotificationService : BackgroundService
     {
-        private readonly Sentinals sentinals;
+        private readonly Sentinels sentinels;
         private readonly Options.Discord discordOptions;
         private readonly ILogger<RestartNotificationService> logger;
         private readonly TelemetryClient telemetryClient;
 
         public RestartNotificationService(
-            Sentinals sentinals,
+            Sentinels sentinels,
             IOptions<Options.Discord> discordOptions,
             ILogger<RestartNotificationService> logger,
             TelemetryClient telemetryClient)
         {
-            this.sentinals = sentinals;
+            this.sentinels = sentinels;
             this.discordOptions = discordOptions.Value;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
@@ -34,7 +34,7 @@ namespace po.Services
         {
             using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>(this.GetType().FullName);
 
-            DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(stoppingToken);
+            DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(stoppingToken);
 
             IDictionary envVars = Environment.GetEnvironmentVariables();
             var envContent = new StringBuilder();

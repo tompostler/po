@@ -18,12 +18,12 @@ namespace po.Services.Background
 
         public SyncBlobMetadataBackgroundService(
             IServiceProvider serviceProvider,
-            Sentinals sentinals,
+            Sentinels sentinels,
             ILogger<SyncBlobMetadataBackgroundService> logger,
             TelemetryClient telemetryClient,
             IPoStorage storage,
             IOptions<Options.Discord> options)
-            : base(serviceProvider, sentinals, logger, telemetryClient)
+            : base(serviceProvider, sentinels, logger, telemetryClient)
         {
             this.storage = storage;
             this.discordOptions = options.Value;
@@ -88,7 +88,7 @@ namespace po.Services.Background
             string report = BuildReportFromCounts(counts, this.logger, $"Running again in {this.interval.TotalHours:0.0}h.");
             if (report != default)
             {
-                Discord.WebSocket.DiscordSocketClient discordClient = await this.sentinals.DiscordClient.WaitForCompletionAsync(cancellationToken);
+                Discord.WebSocket.DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(cancellationToken);
                 await discordClient.TrySendNotificationTextMessageOrFileAsync(this.discordOptions, report, this.logger, cancellationToken);
             }
         }

@@ -6,16 +6,16 @@ namespace po.Services
 {
     public sealed class MigrationService : IHostedService
     {
-        private readonly Sentinals sentinals;
+        private readonly Sentinels sentinels;
         private readonly IServiceProvider serviceProvider;
         private readonly ILogger<MigrationService> logger;
 
         public MigrationService(
-            Sentinals sentinals,
+            Sentinels sentinels,
             IServiceProvider serviceProvider,
             ILogger<MigrationService> logger)
         {
-            this.sentinals = sentinals;
+            this.sentinels = sentinels;
             this.serviceProvider = serviceProvider;
             this.logger = logger;
         }
@@ -30,7 +30,7 @@ namespace po.Services
             await poContext.Database.MigrateAsync(cancellationToken);
 
             this.logger.LogInformation("Migrations complete.");
-            this.sentinals.DBMigration.SignalCompletion();
+            this.sentinels.DBMigration.SignalCompletion();
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
