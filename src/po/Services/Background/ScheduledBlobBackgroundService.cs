@@ -5,6 +5,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using po.DataAccess;
 using po.Extensions;
+using po.Services.Po;
 using po.Utilities;
 
 namespace po.Services.Background
@@ -12,7 +13,7 @@ namespace po.Services.Background
     public sealed class ScheduledBlobBackgroundService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly IPoStorage poStorage;
+        private readonly PoImageService poImageService;
         private readonly Delays delays;
         private readonly Sentinels sentinels;
         private readonly ILogger<ScheduledBlobBackgroundService> logger;
@@ -20,14 +21,14 @@ namespace po.Services.Background
 
         public ScheduledBlobBackgroundService(
             IServiceProvider serviceProvider,
-            IPoStorage poStorage,
+            PoImageService poImageService,
             Delays delays,
             Sentinels sentinels,
             ILogger<ScheduledBlobBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
-            this.poStorage = poStorage;
+            this.poImageService = poImageService;
             this.delays = delays;
             this.sentinels = sentinels;
             this.logger = logger;
@@ -65,8 +66,7 @@ namespace po.Services.Background
                             }
 
                             await DiscordExtensions.SendSingleImageAsync(
-                                this.serviceProvider,
-                                this.poStorage,
+                                this.poImageService,
                                 nextScheduledBlob.ContainerName,
                                 nextScheduledBlob.Category,
                                 nextScheduledBlob.Username,

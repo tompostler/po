@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using po.DataAccess;
 using po.Extensions;
 using po.Models;
+using po.Services.Po;
 using po.Utilities;
 using System.Text;
 
@@ -12,18 +13,18 @@ namespace po.DiscordImpl.SlashCommands
     public class PoCommand : SlashCommandBase
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly IPoStorage poStorage;
+        private readonly PoImageService poImageService;
         private readonly Delays delays;
         private readonly ILogger<PoCommand> logger;
 
         public PoCommand(
             IServiceProvider serviceProvider,
-            IPoStorage poBlobStorage,
+            PoImageService poImageService,
             Delays delays,
             ILogger<PoCommand> logger)
         {
             this.serviceProvider = serviceProvider;
-            this.poStorage = poBlobStorage;
+            this.poImageService = poImageService;
             this.delays = delays;
             this.logger = logger;
         }
@@ -152,8 +153,7 @@ namespace po.DiscordImpl.SlashCommands
 
                 case "show":
                     await DiscordExtensions.SendSingleImageAsync(
-                        this.serviceProvider,
-                        this.poStorage,
+                        this.poImageService,
                         command.RegistrationData,
                         category,
                         payload.User.Username,
@@ -217,8 +217,7 @@ namespace po.DiscordImpl.SlashCommands
             {
                 case "show":
                     await DiscordExtensions.SendSingleImageAsync(
-                        this.serviceProvider,
-                        this.poStorage,
+                        this.poImageService,
                         command.RegistrationData,
                         category,
                         imessage.Author.Username,

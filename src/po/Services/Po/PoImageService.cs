@@ -1,0 +1,85 @@
+using Microsoft.EntityFrameworkCore;
+using po.DataAccess;
+
+namespace po.Services.Po
+{
+    public sealed class PoImageService
+    {
+        private readonly IServiceProvider serviceProvider;
+        private readonly IPoStorage poStorage;
+
+        public PoImageService(
+            IServiceProvider serviceProvider,
+            IPoStorage poStorage)
+        {
+            this.serviceProvider = serviceProvider;
+            this.poStorage = poStorage;
+        }
+
+        public static string NoneRemainingMessage(string category) => $"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`";
+
+        /// <summary>
+        /// Picks a random unseen image whose category starts with <paramref name="category"/>.
+        /// Does not mark it seen; call <see cref="MarkSeenAsync"/> once it has been shown.
+        /// </summary>
+        /// <returns>The picked image, or null if none are remaining.</returns>
+        public async Task<PoImage> PickUnseenAsync(string containerName, string category, string username, TimeSpan? nextImageIn = default)
+        {
+            using IServiceScope scope = this.serviceProvider.CreateScope();
+            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+
+            Models.PoBlob blob = await poContext.Blobs
+                            .Where(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                            .OrderBy(x => Guid.NewGuid())
+                            .FirstOrDefaultAsync();
+
+            if (blob == default)
+            {
+                return null;
+            }
+
+            var counts = await poContext.Blobs
+                        .Where(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
+                        .GroupBy(x => x.Category)
+                        .Select(g => new
+                        {
+                            g.Key,
+                            CountUnseen = g.Count()
+                        })
+                        .ToListAsync();
+            double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
+
+            string nextImageInText = string.Empty;
+            if (nextImageIn != default)
+            {
+                nextImageInText = "\nNext image in ";
+                if (nextImageIn.Value.TotalHours > 1)
+                {
+                    nextImageInText += nextImageIn.Value.TotalHours.ToString("0.0");
+                    nextImageInText += 'h';
+                }
+                else
+                {
+                    nextImageInText += nextImageIn.Value.TotalMinutes.ToString("0.0");
+                    nextImageInText += 'm';
+                }
+            }
+
+            return new PoImage(
+                blob,
+                blob.Name,
+                $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}{nextImageInText}",
+                this.poStorage.GetReadUriExpiresInOneDay(blob));
+        }
+
+        public async Task MarkSeenAsync(PoImage image)
+        {
+            using IServiceScope scope = this.serviceProvider.CreateScope();
+            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+
+            _ = await poContext.Blobs
+                .Where(x => x.AccountName == image.Blob.AccountName && x.ContainerName == image.Blob.ContainerName && x.Name == image.Blob.Name)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.Seen, true));
+        }
+    }
+}

@@ -1,6 +1,4 @@
 ﻿using Discord;
-using Microsoft.EntityFrameworkCore;
-using po.DataAccess;
 using System.Text;
 
 namespace po.Extensions
@@ -46,8 +44,7 @@ namespace po.Extensions
         }
 
         public static async Task SendSingleImageAsync(
-            IServiceProvider serviceProvider,
-            IPoStorage poStorage,
+            Services.Po.PoImageService poImageService,
             string containerName,
             string category,
             string username,
@@ -55,57 +52,23 @@ namespace po.Extensions
             Func<Embed, Task> embedMessageResponse,
             TimeSpan? nextImageIn = default)
         {
-            using IServiceScope scope = serviceProvider.CreateScope();
-            using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+            Services.Po.PoImage image = await poImageService.PickUnseenAsync(containerName, category, username, nextImageIn);
 
-            Models.PoBlob blob = await poContext.Blobs
-                            .Where(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                            .OrderBy(x => Guid.NewGuid())
-                            .FirstOrDefaultAsync();
-
-            if (blob == default)
+            if (image == default)
             {
-                await textMessageResponse($"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`");
+                await textMessageResponse(Services.Po.PoImageService.NoneRemainingMessage(category));
             }
             else
             {
-                var counts = await poContext.Blobs
-                            .Where(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && !x.Seen)
-                            .GroupBy(x => x.Category)
-                            .Select(g => new
-                            {
-                                g.Key,
-                                CountUnseen = g.Count()
-                            })
-                            .ToListAsync();
-                double chance = 1.0 * counts.Single(c => c.Key == blob.Category).CountUnseen / counts.Sum(c => c.CountUnseen);
-
-                string nextImageInText = string.Empty;
-                if (nextImageIn != default)
-                {
-                    nextImageInText = "\nNext image in ";
-                    if (nextImageIn.Value.TotalHours > 1)
-                    {
-                        nextImageInText += nextImageIn.Value.TotalHours.ToString("0.0");
-                        nextImageInText += 'h';
-                    }
-                    else
-                    {
-                        nextImageInText += nextImageIn.Value.TotalMinutes.ToString("0.0");
-                        nextImageInText += 'm';
-                    }
-                }
-
                 var builder = new EmbedBuilder()
                 {
-                    Title = blob.Name,
-                    Description = $"Request: `{category ?? "(any)"}` ({username})\nResponse category chance: {chance:P2}{nextImageInText}",
-                    ImageUrl = poStorage.GetReadUriExpiresInOneDay(blob).AbsoluteUri
+                    Title = image.Title,
+                    Description = image.Description,
+                    ImageUrl = image.ImageUrl.AbsoluteUri
                 };
                 await embedMessageResponse(builder.Build());
 
-                blob.Seen = true;
-                _ = await poContext.SaveChangesAsync();
+                await poImageService.MarkSeenAsync(image);
             }
         }
     }
