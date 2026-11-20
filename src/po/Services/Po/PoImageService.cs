@@ -91,7 +91,9 @@ namespace po.Services.Po
             int totalCountReset = 0;
             foreach (string categoryToReset in categoriesToReset)
             {
-                int countReset = await poContext.Database.ExecuteSqlRawAsync("UPDATE [Blobs] SET [Seen] = 0 WHERE [Category] = {0} AND [Seen] = 1", categoryToReset);
+                int countReset = await poContext.Blobs
+                    .Where(x => x.ContainerName == containerName && x.Category == categoryToReset && x.Seen)
+                    .ExecuteUpdateAsync(s => s.SetProperty(x => x.Seen, false));
                 totalCountReset += countReset;
                 await onCategoryReset($"Reset view status for {countReset} images in the `{categoryToReset}` category.");
             }
