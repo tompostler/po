@@ -14,17 +14,20 @@ namespace po.DiscordImpl.SlashCommands
         private readonly IServiceProvider serviceProvider;
         private readonly PoImageService poImageService;
         private readonly PoScheduler poScheduler;
+        private readonly PoStatusReport poStatusReport;
         private readonly ILogger<PoCommand> logger;
 
         public PoCommand(
             IServiceProvider serviceProvider,
             PoImageService poImageService,
             PoScheduler poScheduler,
+            PoStatusReport poStatusReport,
             ILogger<PoCommand> logger)
         {
             this.serviceProvider = serviceProvider;
             this.poImageService = poImageService;
             this.poScheduler = poScheduler;
+            this.poStatusReport = poStatusReport;
             this.logger = logger;
         }
 
@@ -169,7 +172,7 @@ namespace po.DiscordImpl.SlashCommands
                     break;
 
                 case "status":
-                    await this.HandleStatusAsync(payload, command, poContext);
+                    await this.HandleStatusAsync(payload, command);
                     break;
 
                 case "timer":
@@ -247,58 +250,9 @@ namespace po.DiscordImpl.SlashCommands
             }
         }
 
-        private async Task HandleStatusAsync(SocketSlashCommand payload, SlashCommandChannel command, PoContext poContext)
+        private async Task HandleStatusAsync(SocketSlashCommand payload, SlashCommandChannel command)
         {
-            var statuses = await poContext.Blobs
-                .Where(b => b.ContainerName == command.RegistrationData)
-                .GroupBy(b => b.Category)
-                .Select(g => new
-                {
-                    g.Key,
-                    CountSeen = g.Count(b => b.Seen),
-                    CountUnseen = g.Count(b => !b.Seen)
-                })
-                .OrderBy(g => g.Key)
-                .ToListAsync();
-
-            if (statuses.Count == 0)
-            {
-                _ = await payload.FollowupAsync("No images known.");
-                return;
-            }
-
-            StringBuilder response = new();
-            int catLen = Math.Max("category".Length, statuses.Max(x => x.Key.Length));
-            int numLen = 8;
-            _ = response.AppendLine("```");
-            _ = response.AppendLine($"{"CATEGORY".PadRight(catLen)}  {"SEEN".PadLeft(numLen)}  {"UNSEEN".PadLeft(numLen)}  {"TOTAL".PadLeft(numLen)}  {"PERCENT VIEWED".PadLeft(numLen)}");
-            foreach (var status in statuses)
-            {
-                _ = response.Append(status.Key.PadRight(catLen));
-                _ = response.Append("  ");
-                _ = response.Append(status.CountSeen.ToString().PadLeft(numLen));
-                _ = response.Append("  ");
-                _ = response.Append(status.CountUnseen.ToString().PadLeft(numLen));
-                _ = response.Append("  ");
-                int loctot = status.CountSeen + status.CountUnseen;
-                _ = response.Append(loctot.ToString().PadLeft(numLen));
-                _ = response.Append("  ");
-                _ = response.Append((1d * status.CountSeen / loctot).ToString("P2").PadLeft(numLen));
-                _ = response.AppendLine();
-            }
-            _ = response.Append("TOTAL".PadRight(catLen));
-            _ = response.Append("  ");
-            _ = response.Append(statuses.Sum(x => x.CountSeen).ToString().PadLeft(numLen));
-            _ = response.Append("  ");
-            _ = response.Append(statuses.Sum(x => x.CountUnseen).ToString().PadLeft(numLen));
-            _ = response.Append("  ");
-            int ovetot = statuses.Sum(x => x.CountSeen + x.CountUnseen);
-            _ = response.Append(ovetot.ToString().PadLeft(numLen));
-            _ = response.Append("  ");
-            _ = response.Append((1d * statuses.Sum(x => x.CountSeen) / ovetot).ToString("P2").PadLeft(numLen));
-            _ = response.AppendLine("```");
-
-            string responseString = response.ToString();
+            string responseString = await this.poStatusReport.BuildAsync(command.RegistrationData);
             this.logger.LogInformation($"Response length is: {responseString.Length}");
             if (responseString.Length > 2000)
             {
