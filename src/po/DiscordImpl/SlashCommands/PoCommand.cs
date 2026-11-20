@@ -5,7 +5,6 @@ using po.DataAccess;
 using po.Extensions;
 using po.Models;
 using po.Services.Po;
-using po.Utilities;
 using System.Text;
 
 namespace po.DiscordImpl.SlashCommands
@@ -14,18 +13,18 @@ namespace po.DiscordImpl.SlashCommands
     {
         private readonly IServiceProvider serviceProvider;
         private readonly PoImageService poImageService;
-        private readonly Delays delays;
+        private readonly PoScheduler poScheduler;
         private readonly ILogger<PoCommand> logger;
 
         public PoCommand(
             IServiceProvider serviceProvider,
             PoImageService poImageService,
-            Delays delays,
+            PoScheduler poScheduler,
             ILogger<PoCommand> logger)
         {
             this.serviceProvider = serviceProvider;
             this.poImageService = poImageService;
-            this.delays = delays;
+            this.poScheduler = poScheduler;
             this.logger = logger;
         }
 
@@ -139,12 +138,17 @@ namespace po.DiscordImpl.SlashCommands
             switch (operation)
             {
                 case "clear":
-                    await HandleClearAsync(payload, command, poContext);
+                    _ = await payload.FollowupAsync(await this.poScheduler.ClearAsync(command.RegistrationData, command.ChannelId));
                     break;
 
                 case "random":
-                    await HandleRandomAsync(payload, command, category, poContext);
-                    this.delays.ScheduledBlob.CancelDelay();
+                    _ = await payload.FollowupAsync(await this.poScheduler.ScheduleRandomAsync(
+                        command.RegistrationData,
+                        command.ChannelId,
+                        category,
+                        payload.User.Username,
+                        (long?)payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "count")?.Value,
+                        payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "duration")?.Value as string));
                     break;
 
                 case "reset":
@@ -166,8 +170,13 @@ namespace po.DiscordImpl.SlashCommands
                     break;
 
                 case "timer":
-                    await HandleTimerAsync(payload, command, category, poContext);
-                    this.delays.ScheduledBlob.CancelDelay();
+                    _ = await payload.FollowupAsync(await this.poScheduler.ScheduleTimerAsync(
+                        command.RegistrationData,
+                        command.ChannelId,
+                        category,
+                        payload.User.Username,
+                        payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "interval")?.Value as string,
+                        payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "duration")?.Value as string));
                     break;
 
                 // Default behavior is to throw up
@@ -233,85 +242,6 @@ namespace po.DiscordImpl.SlashCommands
                         CancellationToken.None);
                     break;
             }
-        }
-
-        private static async Task HandleClearAsync(SocketSlashCommand payload, SlashCommandChannel command, PoContext poContext)
-        {
-            int scheduledBlobsDeleted = await poContext.ScheduledBlobs.Where(x => x.ContainerName == command.RegistrationData && x.ChannelId == command.ChannelId).ExecuteDeleteAsync();
-
-            _ = await payload.FollowupAsync($"Canceled {scheduledBlobsDeleted} scheduled image(s).");
-        }
-
-        private static async Task HandleRandomAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
-        {
-            string errorMessage = default;
-
-            long? countRequested = (long?)payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "count")?.Value;
-            if (!countRequested.HasValue)
-            {
-                errorMessage = "`count` must be supplied.";
-            }
-            else if (countRequested <= 0 || countRequested > 200)
-            {
-                errorMessage = $"Count must be between 0 and 200. (Is currently `{countRequested}`)";
-            }
-
-            string durationInput = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "duration")?.Value as string;
-            if (string.IsNullOrEmpty(durationInput))
-            {
-                errorMessage = "`duration` must be supplied.";
-            }
-            (string msg, TimeSpan parsed) duration = DurationParser.Parse(durationInput);
-            if (duration.msg != default)
-            {
-                errorMessage = duration.msg;
-            }
-            else if (duration.parsed > TimeSpan.FromDays(30))
-            {
-                errorMessage = $"Duration cannot last more than 30 days. (Is currently `{duration.parsed}`)";
-            }
-            else if (duration.parsed.TotalMinutes / countRequested < 5)
-            {
-                errorMessage = "Cannot randomize more than 1 image per 5 minutes.";
-            }
-
-            int countAvailable = await poContext.Blobs.CountAsync(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen);
-            if (countRequested > countAvailable * 1.1)
-            {
-                errorMessage = $"Requested to schedule {countRequested}, but only {countAvailable} are available (including a 10% buffer). Request fewer scheduled images.";
-            }
-
-            if (errorMessage != default)
-            {
-                _ = await payload.FollowupAsync(errorMessage);
-                return;
-            }
-
-            // Create the random intervals (and sort them for sequential counting)
-            var delays = new TimeSpan[countRequested.Value + 1];
-            delays[0] = TimeSpan.Zero;
-            for (int i = 1; i < delays.Length; i++)
-            {
-                delays[i] = TimeSpan.FromMinutes(duration.parsed.TotalMinutes * Random.Shared.NextDouble());
-            }
-            Array.Sort(delays);
-
-            // Actually schedule the delays
-            for (int i = 0; i < delays.Length; i++)
-            {
-                _ = poContext.ScheduledBlobs.Add(
-                    new ScheduledBlob
-                    {
-                        ContainerName = command.RegistrationData,
-                        ChannelId = command.ChannelId,
-                        Category = category,
-                        Username = payload.User.Username + $", random {i + 1}/{delays.Length}",
-                        ScheduledDate = DateTimeOffset.UtcNow.Add(delays[i]),
-                    });
-            }
-            _ = await poContext.SaveChangesAsync();
-
-            _ = await payload.FollowupAsync($"Scheduled {countRequested} images randomly over the next {duration.parsed}.");
         }
 
         private static async Task HandleResetAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
@@ -395,70 +325,6 @@ namespace po.DiscordImpl.SlashCommands
             {
                 _ = await payload.FollowupAsync(responseString);
             }
-        }
-
-        private static async Task HandleTimerAsync(SocketSlashCommand payload, SlashCommandChannel command, string category, PoContext poContext)
-        {
-            string errorMessage = default;
-
-            string intervalInput = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "interval")?.Value as string;
-            if (string.IsNullOrEmpty(intervalInput))
-            {
-                errorMessage = "`interval` must be supplied.";
-            }
-            (string msg, TimeSpan parsed) interval = DurationParser.Parse(intervalInput);
-            if (interval.msg != default)
-            {
-                errorMessage = interval.msg;
-            }
-            else if (interval.parsed < TimeSpan.FromSeconds(30) || interval.parsed > TimeSpan.FromDays(3))
-            {
-                errorMessage = $"Interval must be between 30 seconds and 3 days. (Is currently `{interval.parsed}`)";
-            }
-
-            string durationInput = payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "duration")?.Value as string;
-            if (string.IsNullOrEmpty(durationInput))
-            {
-                errorMessage = "`duration` must be supplied.";
-            }
-            (string msg, TimeSpan parsed) duration = DurationParser.Parse(durationInput);
-            if (duration.msg != default)
-            {
-                errorMessage = duration.msg;
-            }
-            else if (duration.parsed > TimeSpan.FromDays(30))
-            {
-                errorMessage = $"Duration cannot last more than 30 days. (Is currently `{duration.parsed}`)";
-            }
-
-            int countRequested = (int)(duration.parsed.TotalSeconds / interval.parsed.TotalSeconds) + 1;
-            int countAvailable = await poContext.Blobs.CountAsync(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen);
-            if (countRequested > countAvailable * 1.1)
-            {
-                errorMessage = $"Requested to schedule {countRequested}, but only {countAvailable} are available (including a 10% buffer). Request fewer scheduled images.";
-            }
-
-            if (errorMessage != default)
-            {
-                _ = await payload.FollowupAsync(errorMessage);
-                return;
-            }
-
-            for (int i = 0; i < countRequested; i++)
-            {
-                _ = poContext.ScheduledBlobs.Add(
-                    new ScheduledBlob
-                    {
-                        ContainerName = command.RegistrationData,
-                        ChannelId = command.ChannelId,
-                        Category = category,
-                        Username = payload.User.Username + $", timer {i + 1}/{countRequested}",
-                        ScheduledDate = DateTimeOffset.UtcNow.AddSeconds(interval.parsed.TotalSeconds * i),
-                    });
-            }
-            _ = await poContext.SaveChangesAsync();
-
-            _ = await payload.FollowupAsync($"Scheduled {countRequested} images every {interval.parsed} for the next {duration.parsed}.");
         }
     }
 }

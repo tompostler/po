@@ -24,6 +24,7 @@ _ = services.AddDbContext<po.DataAccess.PoContext>((provider, options) => option
               .EnableRetryOnFailure()));
 _ = services.AddSingleton<po.DataAccess.IPoStorage, po.DataAccess.PoLocalStorage>();
 _ = services.AddSingleton<po.Services.Po.PoImageService>();
+_ = services.AddSingleton<po.Services.Po.PoScheduler>();
 
 _ = services.AddSingleton<po.Utilities.Delays>();
 _ = services.AddSingleton<po.Utilities.Sentinels>();
