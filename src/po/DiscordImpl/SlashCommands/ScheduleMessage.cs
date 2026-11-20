@@ -62,7 +62,7 @@ namespace po.DiscordImpl.SlashCommands
             }
             else if (delay.parsed < TimeSpan.FromSeconds(30))
             {
-                errorMessage = $"Delay cannot last less than 30 days. (Is currently `{delay.parsed}`)";
+                errorMessage = $"Delay cannot last less than 30 seconds. (Is currently `{delay.parsed}`)";
             }
 
             string messageInput = payload.Data.Options.FirstOrDefault(x => x.Name == "message")?.Value as string;
