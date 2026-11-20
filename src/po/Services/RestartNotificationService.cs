@@ -1,40 +1,29 @@
 ﻿using System.Collections;
 using System.Security.Cryptography;
 using System.Text;
-using Discord.WebSocket;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
-using Microsoft.Extensions.Options;
-using po.Extensions;
-using po.Utilities;
+using po.Chat;
 
 namespace po.Services
 {
     public class RestartNotificationService : BackgroundService
     {
-        private readonly Sentinels sentinels;
-        private readonly Options.Discord discordOptions;
-        private readonly ILogger<RestartNotificationService> logger;
+        private readonly ChatRouter chatRouter;
         private readonly TelemetryClient telemetryClient;
 
         public RestartNotificationService(
-            Sentinels sentinels,
-            IOptions<Options.Discord> discordOptions,
-            ILogger<RestartNotificationService> logger,
+            ChatRouter chatRouter,
             TelemetryClient telemetryClient)
         {
-            this.sentinels = sentinels;
-            this.discordOptions = discordOptions.Value;
-            this.logger = logger;
+            this.chatRouter = chatRouter;
             this.telemetryClient = telemetryClient;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>(this.GetType().FullName);
-
-            DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(stoppingToken);
 
             IDictionary envVars = Environment.GetEnvironmentVariables();
             var envContent = new StringBuilder();
@@ -48,10 +37,8 @@ namespace po.Services
             }
             string envHashSubstring = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(envContent.ToString())))[..12];
 
-            await discordClient.TrySendNotificationTextMessageOrFileAsync(
-                this.discordOptions,
+            await this.chatRouter.SendNotificationAsync(
                 $"I have been restarted on {Environment.MachineName}. v{ThisAssembly.AssemblyInformationalVersion}. env({envVars.Count}):{envHashSubstring}",
-                this.logger,
                 stoppingToken);
         }
     }
