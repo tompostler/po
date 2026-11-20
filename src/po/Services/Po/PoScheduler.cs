@@ -69,7 +69,7 @@ namespace po.Services.Po
                 errorMessage = "Cannot randomize more than 1 image per 5 minutes.";
             }
 
-            int countAvailable = await poContext.Blobs.CountAsync(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen);
+            int countAvailable = await poContext.Blobs.CountAsync(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && !x.Seen);
             if (countRequested > countAvailable * 1.1)
             {
                 errorMessage = $"Requested to schedule {countRequested}, but only {countAvailable} are available (including a 10% buffer). Request fewer scheduled images.";
@@ -147,7 +147,7 @@ namespace po.Services.Po
             }
 
             int countRequested = (int)(duration.parsed.TotalSeconds / interval.parsed.TotalSeconds) + 1;
-            int countAvailable = await poContext.Blobs.CountAsync(x => x.Category.StartsWith(category ?? string.Empty) && !x.Seen);
+            int countAvailable = await poContext.Blobs.CountAsync(x => x.ContainerName == containerName && x.Category.StartsWith(category ?? string.Empty) && !x.Seen);
             if (countRequested > countAvailable * 1.1)
             {
                 errorMessage = $"Requested to schedule {countRequested}, but only {countAvailable} are available (including a 10% buffer). Request fewer scheduled images.";
