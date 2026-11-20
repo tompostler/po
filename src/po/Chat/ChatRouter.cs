@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using System.Text;
 
 namespace po.Chat
@@ -8,10 +9,17 @@ namespace po.Chat
     public sealed class ChatRouter
     {
         private readonly Dictionary<string, IChatPlatform> platforms;
+        private readonly List<ChannelRef> notificationChannels;
+        private readonly ILogger<ChatRouter> logger;
 
-        public ChatRouter(IEnumerable<IChatPlatform> platforms)
+        public ChatRouter(
+            IEnumerable<IChatPlatform> platforms,
+            IOptions<Options.Notifications> notificationOptions,
+            ILogger<ChatRouter> logger)
         {
             this.platforms = platforms.ToDictionary(x => x.Name);
+            this.notificationChannels = notificationOptions.Value.Channels.Select(ChannelRef.Parse).ToList();
+            this.logger = logger;
         }
 
         public Task WaitUntilReadyAsync(string platformName, CancellationToken cancellationToken)
@@ -37,6 +45,30 @@ namespace po.Chat
             else
             {
                 await platform.SendTextAsync(channel, text, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Sends <paramref name="text"/> to every configured notification channel, like <see cref="SendTextAsync"/>.
+        /// A failure on one channel is logged and doesn't stop the others or throw.
+        /// </summary>
+        public async Task SendNotificationAsync(
+            string text,
+            CancellationToken cancellationToken,
+            string fileName = "update.txt",
+            string fileText = "The background update was too long for a message, so it has been posted as a file.")
+        {
+            foreach (ChannelRef channel in this.notificationChannels)
+            {
+                this.logger.LogInformation($"Attempting to send notification message to {channel}");
+                try
+                {
+                    await this.SendTextAsync(channel, text, cancellationToken, fileName, fileText);
+                }
+                catch (Exception ex)
+                {
+                    this.logger.LogError(ex, $"Could not send notification message to {channel}");
+                }
             }
         }
 
