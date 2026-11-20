@@ -257,7 +257,7 @@ namespace po.DiscordImpl.SlashCommands
             if (responseString.Length > 2000)
             {
                 var fileStream = new MemoryStream(Encoding.UTF8.GetBytes(responseString.Trim().Trim('`')));
-                await payload.RespondWithFileAsync(fileStream, "po-status.txt");
+                _ = await payload.FollowupWithFileAsync(fileStream, "po-status.txt");
             }
             else
             {
