@@ -51,7 +51,7 @@ namespace po.DiscordImpl.SlashCommands
             {
                 errorMessage = "`delay` must be supplied.";
             }
-            (string msg, TimeSpan parsed) delay = GetTimeSpan(delayInput);
+            (string msg, TimeSpan parsed) delay = DurationParser.Parse(delayInput);
             if (delay.msg != default)
             {
                 errorMessage = delay.msg;

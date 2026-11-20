@@ -262,7 +262,7 @@ namespace po.DiscordImpl.SlashCommands
             {
                 errorMessage = "`duration` must be supplied.";
             }
-            (string msg, TimeSpan parsed) duration = GetTimeSpan(durationInput);
+            (string msg, TimeSpan parsed) duration = DurationParser.Parse(durationInput);
             if (duration.msg != default)
             {
                 errorMessage = duration.msg;
@@ -407,7 +407,7 @@ namespace po.DiscordImpl.SlashCommands
             {
                 errorMessage = "`interval` must be supplied.";
             }
-            (string msg, TimeSpan parsed) interval = GetTimeSpan(intervalInput);
+            (string msg, TimeSpan parsed) interval = DurationParser.Parse(intervalInput);
             if (interval.msg != default)
             {
                 errorMessage = interval.msg;
@@ -422,7 +422,7 @@ namespace po.DiscordImpl.SlashCommands
             {
                 errorMessage = "`duration` must be supplied.";
             }
-            (string msg, TimeSpan parsed) duration = GetTimeSpan(durationInput);
+            (string msg, TimeSpan parsed) duration = DurationParser.Parse(durationInput);
             if (duration.msg != default)
             {
                 errorMessage = duration.msg;
