@@ -66,7 +66,7 @@ namespace po.Services.Po
             int ovetot = statuses.Sum(x => x.CountSeen + x.CountUnseen);
             _ = response.Append(ovetot.ToString().PadLeft(numLen));
             _ = response.Append("  ");
-            _ = response.Append((1d * statuses.Sum(x => x.CountSeen) / ovetot).ToString("P2").PadLeft(numLen));
+            _ = response.AppendLine((1d * statuses.Sum(x => x.CountSeen) / ovetot).ToString("P2").PadLeft(numLen));
             _ = response.AppendLine("```");
 
             return response.ToString();
