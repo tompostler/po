@@ -36,6 +36,7 @@ _ = services.AddSingleton<po.Chat.IChatPlatform>(provider => provider.GetRequire
 _ = services.AddHostedService(provider => provider.GetRequiredService<po.Platforms.Discord.DiscordPlatform>());
 _ = services.AddSingleton<po.Chat.ChatRouter>();
 _ = services.AddSingleton<po.Commands.CommandDispatcher>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.CommandList>();
 
 _ = services.AddHttpClient<po.Platforms.Mattermost.MattermostApiClient>();
 _ = services.AddSingleton<po.Platforms.Mattermost.MattermostPlatform>();
