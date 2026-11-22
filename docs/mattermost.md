@@ -16,7 +16,7 @@ During the move, one po instance serves both platforms, and Discord is removed o
 | `Mattermost__ApiBaseUri` | `http://mattermost:8065` | The server root, without `/api/v4`. |
 | `Mattermost__BotToken` | | The `po` bot account's access token. |
 | `Mattermost__TeamName` | `friends` | The team that slash commands are registered in, by its URL name. |
-| `Mattermost__CommandCallbackUri` | `http://po:8080/mattermost/command` | Where Mattermost sends slash commands, on the docker network. |
+| `Mattermost__CommandCallbackUri` | `http://po:8081/mattermost/command` | Where Mattermost sends slash commands, on the internal port. |
 | `Notifications__Channels__N` | `mattermost:abc123…` | One entry per channel, in `platform:id` form, mixing platforms freely. |
 
 `ApiBaseUri` and `BotToken` are required: without them, po fails at startup with an error naming them.
@@ -27,6 +27,12 @@ During the move, one po instance serves both platforms, and Discord is removed o
 po calls the Mattermost API over the docker network rather than the public URL.
 That skips the reverse proxy and TLS, keeps the bot token off the public path, and keeps working when public DNS or the certificate has a problem.
 Switching to the public URL later is only a config change.
+
+Mattermost calls po back on a second port, which only the docker network can reach.
+`appsettings.json` declares both ports under `Kestrel:Endpoints`, because declaring any endpoint there replaces the container's default `ASPNETCORE_HTTP_PORTS`: `Public` on 8080 is what Cloudflare reaches, and `Mattermost` on 8081 must never be published or tunnelled.
+The command endpoint answers 404 unless the connection arrived on the `Mattermost` port, which it checks directly, because the `Host` header that `[Host]` and `RequireHost` match is set by the client.
+The command token is still checked on that port, because any team member can create a slash command that points at it.
+Mattermost blocks calls to private addresses, so the `po` host has to be listed in `ServiceSettings.AllowedUntrustedInternalConnections`.
 
 Image links in attachments have to stay public, because each viewer's client loads `image_url` itself, so `Storage:BaseUri` stays `https://po.tcp.wtf`.
 The Mattermost server also fetches the image to work out its size, so the Mattermost container needs to reach `po.tcp.wtf` too.

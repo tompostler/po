@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using po.Attributes;
 using po.Commands;
 using po.Platforms.Mattermost;
 
@@ -8,11 +9,13 @@ namespace po.Controllers
     /// Receives po's slash commands from Mattermost.
     /// </summary>
     /// <remarks>
-    /// This doesn't use <see cref="Attributes.ApiKeyOrSignedUrlAuthorizationAttribute"/>, because Mattermost proves each request with the command's own token instead.
+    /// It listens only on the internal Mattermost port, and doesn't use <see cref="ApiKeyOrSignedUrlAuthorizationAttribute"/>, because Mattermost proves each request with the command's own token instead.
+    /// The token check stays even though the port is internal, because any team member can create a slash command that points here.
     /// Everything that can fail fast is checked before answering, and the command itself runs after the answer, so Mattermost's roughly 3-second limit never applies to it.
     /// </remarks>
     [ApiController]
     [Route("mattermost")]
+    [MattermostEndpointOnly]
     public sealed class MattermostController : ControllerBase
     {
         private readonly MattermostCommandTokens tokens;

@@ -42,7 +42,7 @@
             public string TeamName { get; set; }
 
             /// <summary>
-            /// Where Mattermost sends slash command requests: po's <c>mattermost/command</c> endpoint, such as <c>http://po:8080/mattermost/command</c> on the docker network.
+            /// Where Mattermost sends slash command requests: po's <c>mattermost/command</c> endpoint, such as <c>http://po:8081/mattermost/command</c>, on the port of the <c>Kestrel:Endpoints:Mattermost</c> endpoint.
             /// </summary>
             public Uri CommandCallbackUri { get; set; }
         }
