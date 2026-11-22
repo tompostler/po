@@ -236,8 +236,7 @@ namespace po.Services
                 {
                     await payload.RespondAsync($"`{payload.CommandName}` is not enabled for the current channel.");
                 }
-
-                if (this.slashCommands.ContainsKey(payload.CommandName))
+                else if (this.slashCommands.ContainsKey(payload.CommandName))
                 {
                     await this.slashCommands[payload.CommandName].HandleCommandAsync(payload);
                 }
