@@ -10,7 +10,10 @@ namespace po.Platforms.Mattermost
     /// </summary>
     public sealed class MattermostApiClient
     {
-        private static readonly JsonSerializerOptions JsonOptions = new()
+        /// <summary>
+        /// Mattermost's snake_case JSON, also used by the command endpoint for its responses.
+        /// </summary>
+        internal static readonly JsonSerializerOptions JsonOptions = new()
         {
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
