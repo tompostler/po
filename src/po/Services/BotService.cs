@@ -19,7 +19,6 @@ namespace po.Services
     public sealed class BotService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
-        private readonly IPoStorage poBlobStorage;
         private readonly Sentinels sentinels;
         private readonly DiscordPlatform discordPlatform;
         private readonly Dictionary<string, DiscordImpl.SlashCommands.SlashCommandBase> slashCommands;
@@ -31,7 +30,6 @@ namespace po.Services
 
         public BotService(
             IServiceProvider serviceProvider,
-            IPoStorage poBlobStorage,
             Sentinels sentinels,
             DiscordPlatform discordPlatform,
             IEnumerable<DiscordImpl.SlashCommands.SlashCommandBase> slashCommands,
@@ -40,7 +38,6 @@ namespace po.Services
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
-            this.poBlobStorage = poBlobStorage;
             this.sentinels = sentinels;
             this.discordPlatform = discordPlatform;
             this.discordClient = discordPlatform.Client;
