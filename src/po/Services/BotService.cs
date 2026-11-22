@@ -6,6 +6,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using po.Chat;
 using po.DataAccess;
 using po.Extensions;
 using po.Platforms.Discord;
@@ -21,6 +22,7 @@ namespace po.Services
         private readonly IServiceProvider serviceProvider;
         private readonly Sentinels sentinels;
         private readonly DiscordPlatform discordPlatform;
+        private readonly ChatRouter chatRouter;
         private readonly Dictionary<string, DiscordImpl.SlashCommands.SlashCommandBase> slashCommands;
         private readonly Options.Discord options;
         private readonly ILogger<BotService> logger;
@@ -32,6 +34,7 @@ namespace po.Services
             IServiceProvider serviceProvider,
             Sentinels sentinels,
             DiscordPlatform discordPlatform,
+            ChatRouter chatRouter,
             IEnumerable<DiscordImpl.SlashCommands.SlashCommandBase> slashCommands,
             IOptions<Options.Discord> options,
             ILogger<BotService> logger,
@@ -40,6 +43,7 @@ namespace po.Services
             this.serviceProvider = serviceProvider;
             this.sentinels = sentinels;
             this.discordPlatform = discordPlatform;
+            this.chatRouter = chatRouter;
             this.discordClient = discordPlatform.Client;
             this.slashCommands = slashCommands.ToDictionary(x => x.ExpectedCommand.Name);
             this.options = options.Value;
@@ -141,7 +145,7 @@ namespace po.Services
                         }
                         else
                         {
-                            await this.discordClient.TrySendNotificationTextMessageOrFileAsync(this.options, $"Removed {slashCommandChannel}", this.logger, cancellationToken);
+                            await this.chatRouter.SendNotificationTextAsync($"Removed {slashCommandChannel}", cancellationToken);
                         }
                     }
                     slashCommand.EnabledChannels = channelsToKeep;
