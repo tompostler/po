@@ -9,6 +9,7 @@ namespace po.Tests.Utilities
         [DataRow("90m", 90 * 60)]
         [DataRow("2H", 2 * 60 * 60)]
         [DataRow("1.5d", 36 * 60 * 60)]
+        [DataRow("45s", 45)]
         [DataRow("01:30:00", 90 * 60)]
         public void ParsesSuffixedNumbersAndTimeSpans(string input, int expectedSeconds)
         {
@@ -20,6 +21,7 @@ namespace po.Tests.Utilities
 
         [TestMethod]
         [DataRow("xm")]
+        [DataRow("xs")]
         [DataRow("soon")]
         public void RejectsUnparseableInputWithAMessage(string input)
         {

@@ -29,7 +29,7 @@ namespace po.Commands
             Version = 1,
             Options =
             [
-                new CommandOption { Name = "delay", Description = "The duration to wait expressed as a number suffixed with 'd', 'h', or 'm' for scale.", Type = CommandOptionType.String, Required = true },
+                new CommandOption { Name = "delay", Description = "The duration to wait expressed as a number suffixed with 'd', 'h', 'm', or 's' for scale.", Type = CommandOptionType.String, Required = true },
                 new CommandOption { Name = "message", Description = "The message to send after the delay.", Type = CommandOptionType.String, Required = true },
             ],
         };
