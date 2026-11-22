@@ -33,6 +33,7 @@ Mattermost calls po back on a second port, which only the docker network can rea
 The command endpoint answers 404 unless the connection arrived on the `Mattermost` port, which it checks directly, because the `Host` header that `[Host]` and `RequireHost` match is set by the client.
 The command token is still checked on that port, because any team member can create a slash command that points at it.
 Mattermost blocks calls to private addresses, so the `po` host has to be listed in `ServiceSettings.AllowedUntrustedInternalConnections`.
+po doesn't redirect HTTP to HTTPS itself, because that would also redirect these internal plain-HTTP calls; public traffic is upgraded at Cloudflare with **Always Use HTTPS** instead.
 
 Image links in attachments have to stay public, because each viewer's client loads `image_url` itself, so `Storage:BaseUri` stays `https://po.tcp.wtf`.
 The Mattermost server also fetches the image to work out its size, so the Mattermost container needs to reach `po.tcp.wtf` too.

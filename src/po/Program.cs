@@ -57,7 +57,6 @@ _ = services.AddDiscordBotSlashCommands();
 WebApplication app = builder.Build();
 
 _ = app.UseDeveloperExceptionPage();
-_ = app.UseHttpsRedirection();
 _ = app.UseRouting();
 
 _ = app.UseMiddleware<po.Middleware.ExceptionToStatusCodeMiddleware>();
