@@ -79,4 +79,6 @@ That limit only matters for ephemeral replies, which today are only `/schedule-m
 4. Copy each channel's id from **View Info** in the channel menu into a `mattermost:<id>` entry in `Notifications:Channels`.
 5. Under **Integrations > Integration Management**, enable custom slash commands.
 6. Set `Mattermost__TeamName` to the team's URL name, and `Mattermost__CommandCallbackUri` to po's internal-port endpoint.
-7. Team members can manage their own slash commands by default, so the bot needs nothing more; if registration logs a 403, make the bot a team admin rather than a system admin.
+7. Make the bot a team admin, under **System Console > User Management > Teams**, in the team's member list.
+   Registering slash commands needs `manage_own_slash_commands` in the team, which ordinary members didn't have on this server, so without it registration fails with a 403 on `GET /api/v4/commands`.
+   Team admin is enough; the bot doesn't need to be a system admin, because ephemeral replies avoid `posts/ephemeral`.
