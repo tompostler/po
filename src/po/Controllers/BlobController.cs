@@ -1,5 +1,7 @@
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using po.Attributes;
 using po.DataAccess;
 
@@ -10,6 +12,10 @@ namespace po.Controllers
     [ApiKeyOrSignedUrlAuthorization]
     public sealed class BlobController : ControllerBase
     {
+        public const string DownloadCorsPolicy = "BlobDownload";
+
+        private static readonly FileExtensionContentTypeProvider ContentTypes = new();
+
         private readonly IPoStorage storage;
 
         public BlobController(IPoStorage storage)
@@ -85,7 +91,13 @@ namespace po.Controllers
             return this.Ok(blobs);
         }
 
+        /// <remarks>
+        /// Any origin may read a blob, because the signed URL is already the credential and an <c>img</c> tag can load it from anywhere.
+        /// Mattermost's full-size image viewer fetches the image with script, which needs that CORS allowance, unlike the inline preview.
+        /// The blob is served inline with its real content type, rather than as a download, so clients that respect the headers display it.
+        /// </remarks>
         [HttpGet("{containerName}/{*blobName}")]
+        [EnableCors(DownloadCorsPolicy)]
         public async Task<IActionResult> Download(
             string containerName,
             string blobName,
@@ -107,7 +119,12 @@ namespace po.Controllers
                 return this.NotFound();
             }
 
-            return this.File(stream, "application/octet-stream", Path.GetFileName(blobName));
+            if (!ContentTypes.TryGetContentType(blobName, out string contentType))
+            {
+                contentType = "application/octet-stream";
+            }
+
+            return this.File(stream, contentType, enableRangeProcessing: true);
         }
 
         [HttpDelete("{containerName}/{*blobName}")]

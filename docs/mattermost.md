@@ -38,6 +38,8 @@ po doesn't redirect HTTP to HTTPS itself, because that would also redirect these
 Image links in attachments have to stay public, because each viewer's client loads `image_url` itself, so `Storage:BaseUri` stays `https://po.tcp.wtf`.
 The Mattermost server also fetches the image to work out its size, so the Mattermost container needs to reach `po.tcp.wtf` too.
 If that name resolves to a private address from inside the container, Mattermost blocks it until the host is listed in `ServiceSettings.AllowedUntrustedInternalConnections`.
+The inline preview is an `img` tag, but the full-size viewer in the web and desktop apps downloads the image with script, so blob downloads allow any origin through CORS; without that, the viewer spins forever.
+That's safe because the signed URL is already the credential, and only the download action allows it, so the API-key actions stay off-limits to browsers.
 
 ## Readiness
 
