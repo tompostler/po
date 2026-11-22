@@ -3,7 +3,9 @@ using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using po.DataAccess;
 using po.Extensions;
+using po.Chat;
 using po.Models;
+using po.Platforms.Discord;
 using po.Services.Po;
 using System.Text;
 
@@ -128,7 +130,8 @@ namespace po.DiscordImpl.SlashCommands
 
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == payload.CommandName && sc.ChannelId == payload.ChannelId);
+            ChannelRef channel = DiscordPlatform.ToChannelRef(payload.ChannelId.Value);
+            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == payload.CommandName && sc.Platform == channel.Platform && sc.ChannelId == channel.Id);
 
             if (string.IsNullOrWhiteSpace(command?.RegistrationData))
             {
@@ -141,13 +144,13 @@ namespace po.DiscordImpl.SlashCommands
             switch (operation)
             {
                 case "clear":
-                    _ = await payload.FollowupAsync(await this.poScheduler.ClearAsync(command.RegistrationData, command.ChannelId));
+                    _ = await payload.FollowupAsync(await this.poScheduler.ClearAsync(command.RegistrationData, command.Channel));
                     break;
 
                 case "random":
                     _ = await payload.FollowupAsync(await this.poScheduler.ScheduleRandomAsync(
                         command.RegistrationData,
-                        command.ChannelId,
+                        command.Channel,
                         category,
                         payload.User.Username,
                         (long?)payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "count")?.Value,
@@ -178,7 +181,7 @@ namespace po.DiscordImpl.SlashCommands
                 case "timer":
                     _ = await payload.FollowupAsync(await this.poScheduler.ScheduleTimerAsync(
                         command.RegistrationData,
-                        command.ChannelId,
+                        command.Channel,
                         category,
                         payload.User.Username,
                         payload.Data.Options.First().Options?.FirstOrDefault(x => x.Name == "interval")?.Value as string,
@@ -205,7 +208,8 @@ namespace po.DiscordImpl.SlashCommands
 
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == contentChunks[0] && sc.ChannelId == imessage.Channel.Id);
+            ChannelRef channel = DiscordPlatform.ToChannelRef(imessage.Channel.Id);
+            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == contentChunks[0] && sc.Platform == channel.Platform && sc.ChannelId == channel.Id);
 
             if (string.IsNullOrWhiteSpace(command?.RegistrationData))
             {

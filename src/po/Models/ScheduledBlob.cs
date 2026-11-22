@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using po.Chat;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace po.Models
@@ -12,8 +13,10 @@ namespace po.Models
         [MaxLength(64)]
         public string ContainerName { get; set; }
 
-        [Required]
-        public ulong ChannelId { get; set; }
+        /// <summary>
+        /// Mapped as a complex type to the <c>Platform</c> and <c>ChannelId</c> columns, so queries can compare it directly.
+        /// </summary>
+        public ChannelRef Channel { get; set; }
 
         [MaxLength(32)]
         public string Category { get; set; }

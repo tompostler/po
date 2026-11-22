@@ -139,7 +139,8 @@ namespace po.Services
                     List<Models.SlashCommandChannel> channelsToKeep = new();
                     foreach (Models.SlashCommandChannel slashCommandChannel in slashCommand.EnabledChannels ?? Enumerable.Empty<Models.SlashCommandChannel>())
                     {
-                        if (allTextChannels.Any(tc => slashCommandChannel.ChannelId == tc.Id))
+                        // Only Discord channels can be checked against the guilds, so other platforms' channels are kept.
+                        if (slashCommandChannel.Platform != DiscordPlatform.PlatformName || allTextChannels.Any(tc => slashCommandChannel.Channel == DiscordPlatform.ToChannelRef(tc.Id)))
                         {
                             channelsToKeep.Add(slashCommandChannel);
                         }
@@ -231,7 +232,7 @@ namespace po.Services
                 {
                     await payload.RespondAsync($"`{payload.CommandName}` is not registered for handling.");
                 }
-                else if (command.RequiresChannelEnablement && !command.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id))
+                else if (command.RequiresChannelEnablement && !command.EnabledChannels.Any(x => x.Channel == DiscordPlatform.ToChannelRef(payload.Channel.Id)))
                 {
                     await payload.RespondAsync($"`{payload.CommandName}` is not enabled for the current channel.");
                 }

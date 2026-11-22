@@ -6,7 +6,7 @@ During the move, one po instance serves both platforms, and Discord is removed o
 ## What goes to Mattermost today
 
 - Notifications go to every channel in `Notifications:Channels`, so a `mattermost:<channel-id>` entry there gets the restart notice, sync reports, random messages and the "Removed …" startup notice.
-- Scheduled images and scheduled messages still go only to Discord, because the database stores their channel as a Discord id.
+- Scheduled images and scheduled messages go to whichever platform their row names, but only the Discord commands create them so far.
 - Slash commands are still Discord-only.
 
 ## Configuration

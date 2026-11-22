@@ -4,7 +4,6 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using po.Chat;
 using po.DataAccess;
-using po.Platforms.Discord;
 using po.Utilities;
 
 namespace po.Services.Background
@@ -53,10 +52,8 @@ namespace po.Services.Background
 
                         if (nextScheduledMessage?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
-                            var channel = new ChannelRef(DiscordPlatform.PlatformName, nextScheduledMessage.ChannelId.ToString());
-
                             await this.chatRouter.SendMessageAsync(
-                                channel,
+                                nextScheduledMessage.Channel,
                                 new ChatMessage
                                 {
                                     AuthorName = nextScheduledMessage.Author,

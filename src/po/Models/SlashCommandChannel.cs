@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using po.Chat;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace po.Models
@@ -10,7 +11,22 @@ namespace po.Models
         public string SlashCommandName { get; set; }
 
         [Required]
-        public ulong ChannelId { get; set; }
+        [MaxLength(16)]
+        public string Platform { get; set; }
+
+        [Required]
+        [MaxLength(64)]
+        public string ChannelId { get; set; }
+
+        /// <summary>
+        /// <see cref="Platform"/> and <see cref="ChannelId"/> together, for code outside queries.
+        /// </summary>
+        [NotMapped]
+        public ChannelRef Channel
+        {
+            get => new(this.Platform, this.ChannelId);
+            set => (this.Platform, this.ChannelId) = (value.Platform, value.Id);
+        }
 
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTimeOffset RegistrationDate { get; set; }
@@ -18,6 +34,6 @@ namespace po.Models
         [MaxLength(64)]
         public string RegistrationData { get; set; }
 
-        public override string ToString() => $"{nameof(SlashCommandChannel)}: {this.SlashCommandName} in {this.ChannelId}";
+        public override string ToString() => $"{nameof(SlashCommandChannel)}: {this.SlashCommandName} in {this.Channel}";
     }
 }

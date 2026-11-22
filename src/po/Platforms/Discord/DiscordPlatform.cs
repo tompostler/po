@@ -35,6 +35,11 @@ namespace po.Platforms.Discord
         /// </summary>
         public DiscordSocketClient Client { get; }
 
+        /// <summary>
+        /// The <see cref="ChannelRef"/> for a Discord channel id, such as one from an interaction payload.
+        /// </summary>
+        public static ChannelRef ToChannelRef(ulong channelId) => new(PlatformName, channelId.ToString());
+
         public string Name => PlatformName;
 
         public int MaxMessageLength => 2000;

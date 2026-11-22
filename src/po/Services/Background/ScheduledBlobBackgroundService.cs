@@ -4,7 +4,6 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
 using po.Chat;
 using po.DataAccess;
-using po.Platforms.Discord;
 using po.Services.Po;
 using po.Utilities;
 
@@ -59,7 +58,7 @@ namespace po.Services.Background
 
                         if (nextScheduledBlob?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
-                            var channel = new ChannelRef(DiscordPlatform.PlatformName, nextScheduledBlob.ChannelId.ToString());
+                            ChannelRef channel = nextScheduledBlob.Channel;
 
                             TimeSpan? nextBlobIn = default;
                             if (nextScheduledBlobs.Count == 2)

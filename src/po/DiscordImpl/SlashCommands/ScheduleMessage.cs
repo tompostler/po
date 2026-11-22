@@ -2,6 +2,7 @@
 using Discord.WebSocket;
 using po.DataAccess;
 using po.Models;
+using po.Platforms.Discord;
 using po.Utilities;
 
 namespace po.DiscordImpl.SlashCommands
@@ -91,7 +92,7 @@ namespace po.DiscordImpl.SlashCommands
                 _ = poContext.ScheduledMessages.Add(
                     new ScheduledMessage
                     {
-                        ChannelId = payload.ChannelId.Value,
+                        Channel = DiscordPlatform.ToChannelRef(payload.ChannelId.Value),
                         Author = payload.User.Username,
                         Message = messageInput,
                         ScheduledDate = DateTimeOffset.UtcNow.Add(delay.parsed)

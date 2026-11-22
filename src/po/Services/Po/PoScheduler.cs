@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using po.Chat;
 using po.DataAccess;
 using po.Models;
 using po.Utilities;
@@ -22,12 +23,12 @@ namespace po.Services.Po
             this.delays = delays;
         }
 
-        public async Task<string> ClearAsync(string containerName, ulong channelId)
+        public async Task<string> ClearAsync(string containerName, ChannelRef channel)
         {
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
 
-            int scheduledBlobsDeleted = await poContext.ScheduledBlobs.Where(x => x.ContainerName == containerName && x.ChannelId == channelId).ExecuteDeleteAsync();
+            int scheduledBlobsDeleted = await poContext.ScheduledBlobs.Where(x => x.ContainerName == containerName && x.Channel == channel).ExecuteDeleteAsync();
 
             return $"Canceled {scheduledBlobsDeleted} scheduled image(s).";
         }
@@ -35,7 +36,7 @@ namespace po.Services.Po
         /// <summary>
         /// Schedules <paramref name="countRequested"/> images at random times over <paramref name="durationInput"/>, plus one immediately.
         /// </summary>
-        public async Task<string> ScheduleRandomAsync(string containerName, ulong channelId, string category, string username, long? countRequested, string durationInput)
+        public async Task<string> ScheduleRandomAsync(string containerName, ChannelRef channel, string category, string username, long? countRequested, string durationInput)
         {
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
@@ -96,7 +97,7 @@ namespace po.Services.Po
                     new ScheduledBlob
                     {
                         ContainerName = containerName,
-                        ChannelId = channelId,
+                        Channel = channel,
                         Category = category,
                         Username = username + $", random {i + 1}/{delays.Length}",
                         ScheduledDate = DateTimeOffset.UtcNow.Add(delays[i]),
@@ -111,7 +112,7 @@ namespace po.Services.Po
         /// <summary>
         /// Schedules an image every <paramref name="intervalInput"/> for <paramref name="durationInput"/>, starting immediately.
         /// </summary>
-        public async Task<string> ScheduleTimerAsync(string containerName, ulong channelId, string category, string username, string intervalInput, string durationInput)
+        public async Task<string> ScheduleTimerAsync(string containerName, ChannelRef channel, string category, string username, string intervalInput, string durationInput)
         {
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
@@ -164,7 +165,7 @@ namespace po.Services.Po
                     new ScheduledBlob
                     {
                         ContainerName = containerName,
-                        ChannelId = channelId,
+                        Channel = channel,
                         Category = category,
                         Username = username + $", timer {i + 1}/{countRequested}",
                         ScheduledDate = DateTimeOffset.UtcNow.AddSeconds(interval.parsed.TotalSeconds * i),

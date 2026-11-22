@@ -2,7 +2,9 @@
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using po.DataAccess;
+using po.Chat;
 using po.Models;
+using po.Platforms.Discord;
 using System.Text;
 
 namespace po.DiscordImpl.SlashCommands
@@ -69,6 +71,7 @@ namespace po.DiscordImpl.SlashCommands
         public override async Task HandleCommandAsync(SocketSlashCommand payload)
         {
             string operation = payload.Data.Options.First().Name;
+            ChannelRef channel = DiscordPlatform.ToChannelRef(payload.Channel.Id);
 
             if (operation == "list")
             {
@@ -81,10 +84,10 @@ namespace po.DiscordImpl.SlashCommands
                 StringBuilder response = new();
                 _ = response.AppendLine();
                 _ = response.AppendLine("Enabled commands:");
-                _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => c.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id)).Select(x => x.Name)));
+                _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => c.EnabledChannels.Any(x => x.Channel == channel)).Select(x => x.Name)));
                 _ = response.AppendLine();
                 _ = response.AppendLine("Disabled commands:");
-                _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => !c.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id)).Select(x => x.Name)));
+                _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => !c.EnabledChannels.Any(x => x.Channel == channel)).Select(x => x.Name)));
                 await payload.RespondAsync(response.ToString());
                 return;
             }
@@ -98,15 +101,15 @@ namespace po.DiscordImpl.SlashCommands
                 {
                     await payload.RespondAsync($"Could not find `{commandName}` in data store.");
                 }
-                else if (operation == "add" && !commandRequiringEnablement.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id))
+                else if (operation == "add" && !commandRequiringEnablement.EnabledChannels.Any(x => x.Channel == channel))
                 {
-                    commandRequiringEnablement.EnabledChannels.Add(new SlashCommandChannel { SlashCommandName = commandRequiringEnablement.Name, ChannelId = payload.Channel.Id });
+                    commandRequiringEnablement.EnabledChannels.Add(new SlashCommandChannel { SlashCommandName = commandRequiringEnablement.Name, Channel = channel });
                     _ = await poContext.SaveChangesAsync();
                     await payload.RespondAsync($"Enabled `{commandName}` for the current channel.");
                 }
-                else if (operation == "remove" && commandRequiringEnablement.EnabledChannels.Any(x => x.ChannelId == payload.Channel.Id))
+                else if (operation == "remove" && commandRequiringEnablement.EnabledChannels.Any(x => x.Channel == channel))
                 {
-                    commandRequiringEnablement.EnabledChannels = commandRequiringEnablement.EnabledChannels.Where(x => x.ChannelId != payload.Channel.Id).ToList();
+                    commandRequiringEnablement.EnabledChannels = commandRequiringEnablement.EnabledChannels.Where(x => x.Channel != channel).ToList();
                     _ = await poContext.SaveChangesAsync();
                     await payload.RespondAsync($"Disabled `{commandName}` for the current channel.");
                 }

@@ -2,7 +2,9 @@
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using po.DataAccess;
+using po.Chat;
 using po.Models;
+using po.Platforms.Discord;
 using po.Services.Po;
 using System.Text;
 
@@ -62,7 +64,8 @@ namespace po.DiscordImpl.SlashCommands
             string operation = payload.Data.Options.First().Name;
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.ChannelId == payload.ChannelId);
+            ChannelRef channel = DiscordPlatform.ToChannelRef(payload.ChannelId.Value);
+            SlashCommandChannel command = await poContext.SlashCommandChannels.SingleOrDefaultAsync(sc => sc.SlashCommandName == "po" && sc.Platform == channel.Platform && sc.ChannelId == channel.Id);
 
             if (operation == "associate")
             {
@@ -83,7 +86,7 @@ namespace po.DiscordImpl.SlashCommands
                         command = new()
                         {
                             SlashCommandName = "po",
-                            ChannelId = payload.ChannelId.Value,
+                            Channel = channel,
                         };
                         _ = poContext.SlashCommandChannels.Add(command);
                     }

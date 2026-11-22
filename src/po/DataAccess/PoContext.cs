@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using po.Models;
 
 namespace po.DataAccess
@@ -47,6 +48,9 @@ namespace po.DataAccess
             _ = modelBuilder.HasSequence<long>("ScheduledBlobIds").StartsAt(1200);
 
             _ = modelBuilder.Entity<ScheduledBlob>()
+                .ComplexProperty(x => x.Channel, MapChannel);
+
+            _ = modelBuilder.Entity<ScheduledBlob>()
                 .Property(x => x.Id)
                 .HasDefaultValueSql("NEXT VALUE FOR dbo.ScheduledBlobIds");
 
@@ -55,6 +59,9 @@ namespace po.DataAccess
                 .HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
             _ = modelBuilder.HasSequence<long>("ScheduledMessageIds").StartsAt(10);
+
+            _ = modelBuilder.Entity<ScheduledMessage>()
+                .ComplexProperty(x => x.Channel, MapChannel);
 
             _ = modelBuilder.Entity<ScheduledMessage>()
                 .Property(x => x.Id)
@@ -68,7 +75,7 @@ namespace po.DataAccess
                 .HasKey(x => x.Name);
 
             _ = modelBuilder.Entity<SlashCommandChannel>()
-                .HasKey(x => new { x.SlashCommandName, x.ChannelId });
+                .HasKey(x => new { x.SlashCommandName, x.Platform, x.ChannelId });
 
             _ = modelBuilder.Entity<SlashCommandChannel>()
                 .Property(x => x.RegistrationDate)
@@ -78,6 +85,15 @@ namespace po.DataAccess
                 .HasKey(x => x.Name);
 
             base.OnModelCreating(modelBuilder);
+        }
+
+        /// <summary>
+        /// Maps a <see cref="Chat.ChannelRef"/> to the same <c>Platform</c> and <c>ChannelId</c> columns that <see cref="SlashCommandChannel"/> declares directly.
+        /// </summary>
+        private static void MapChannel(ComplexPropertyBuilder<Chat.ChannelRef> channel)
+        {
+            _ = channel.Property(x => x.Platform).HasColumnName("Platform").HasMaxLength(16).IsRequired();
+            _ = channel.Property(x => x.Id).HasColumnName("ChannelId").HasMaxLength(64).IsRequired();
         }
     }
 }
