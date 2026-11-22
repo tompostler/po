@@ -1,12 +1,9 @@
-﻿using Discord;
-using Discord.WebSocket;
-using Microsoft.ApplicationInsights;
+﻿using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using po.Chat;
 using po.DataAccess;
-using po.Extensions;
 using po.Utilities;
 
 namespace po.Services.Background
@@ -14,24 +11,24 @@ namespace po.Services.Background
     public sealed class RandomMessageBackgroundService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
+        private readonly ChatRouter chatRouter;
         private readonly Delays delays;
         private readonly Sentinels sentinels;
-        private readonly Options.Discord options;
         private readonly ILogger<RandomMessageBackgroundService> logger;
         private readonly TelemetryClient telemetryClient;
 
         public RandomMessageBackgroundService(
             IServiceProvider serviceProvider,
+            ChatRouter chatRouter,
             Delays delays,
             Sentinels sentinels,
-            IOptions<Options.Discord> options,
             ILogger<RandomMessageBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
+            this.chatRouter = chatRouter;
             this.delays = delays;
             this.sentinels = sentinels;
-            this.options = options.Value;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
         }
@@ -53,35 +50,18 @@ namespace po.Services.Background
 
                         if (randomMessage != default)
                         {
-                            DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(stoppingToken);
-
-                            Color? color = default;
-                            if (Color.TryParse(randomMessage.Color, out Color parsedColor))
+                            var message = new ChatMessage
                             {
-                                color = parsedColor;
-                            }
-                            else if (randomMessage.Title.Contains("not successful") || randomMessage.Title.Contains("unsuccessful") || randomMessage.Title.Contains("failed"))
-                            {
-                                color = Color.Red;
-                            }
-                            else if (randomMessage.Title.Contains("successful"))
-                            {
-                                color = Color.Green;
-                            }
-
-                            EmbedBuilder embedBuilder = new()
-                            {
-                                Color = color,
-                                Description = (randomMessage.Description?.Trim() + $"\n\n-# (random message {randomMessage.Id})").Trim(),
                                 Title = randomMessage.Title.Trim(),
-                                Timestamp = randomMessage.CreatedDate
+                                Text = randomMessage.Description?.Trim(),
+                                ColorHex = ChooseColorHex(randomMessage),
+                                Footer = $"random message {randomMessage.Id}",
                             };
 
-                            await discordClient.SendEmbedMessageAsync(
-                                this.options.BotNotificationChannelId,
-                                embedBuilder.Build(),
-                                this.logger,
-                                stoppingToken);
+                            if (!await this.chatRouter.SendNotificationMessageAsync(message, stoppingToken))
+                            {
+                                throw new InvalidOperationException($"Random message {randomMessage.Id} was not sent to any notification channel, so it stays queued.");
+                            }
 
                             _ = poContext.RandomMessages.Remove(randomMessage);
                             _ = await poContext.SaveChangesAsync(stoppingToken);
@@ -107,6 +87,29 @@ namespace po.Services.Background
 
                 await this.delays.RandomMessage.Delay(delay, this.logger, stoppingToken);
             }
+        }
+
+        /// <summary>
+        /// Uses the sender's color if given, otherwise red or green when the title reads like a failure or success report.
+        /// </summary>
+        private static string ChooseColorHex(Models.RandomMessage randomMessage)
+        {
+            if (!string.IsNullOrWhiteSpace(randomMessage.Color))
+            {
+                return randomMessage.Color.Trim();
+            }
+            else if (randomMessage.Title.Contains("not successful") || randomMessage.Title.Contains("unsuccessful") || randomMessage.Title.Contains("failed"))
+            {
+                // Discord.Net's Color.Red
+                return "#E74C3C";
+            }
+            else if (randomMessage.Title.Contains("successful"))
+            {
+                // Discord.Net's Color.Green
+                return "#2ECC71";
+            }
+
+            return default;
         }
     }
 }

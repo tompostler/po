@@ -80,7 +80,7 @@ namespace po.Services.Background
             string report = this.poBlobSync.BuildReportFromCounts(counts, $"Running again in {this.interval.TotalHours:0.0}h.");
             if (report != default)
             {
-                await this.chatRouter.SendNotificationAsync(report, cancellationToken);
+                await this.chatRouter.SendNotificationTextAsync(report, cancellationToken);
             }
         }
     }

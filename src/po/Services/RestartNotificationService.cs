@@ -37,7 +37,7 @@ namespace po.Services
             }
             string envHashSubstring = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(envContent.ToString())))[..12];
 
-            await this.chatRouter.SendNotificationAsync(
+            await this.chatRouter.SendNotificationTextAsync(
                 $"I have been restarted on {Environment.MachineName}. v{ThisAssembly.AssemblyInformationalVersion}. env({envVars.Count}):{envHashSubstring}",
                 stoppingToken);
         }

@@ -52,24 +52,39 @@ namespace po.Chat
         /// Sends <paramref name="text"/> to every configured notification channel, like <see cref="SendTextAsync"/>.
         /// A failure on one channel is logged and doesn't stop the others or throw.
         /// </summary>
-        public async Task SendNotificationAsync(
+        public Task SendNotificationTextAsync(
             string text,
             CancellationToken cancellationToken,
             string fileName = "update.txt",
             string fileText = "The background update was too long for a message, so it has been posted as a file.")
+            => this.SendToNotificationChannelsAsync(channel => this.SendTextAsync(channel, text, cancellationToken, fileName, fileText));
+
+        /// <summary>
+        /// Sends <paramref name="message"/> to every configured notification channel, like <see cref="SendMessageAsync"/>.
+        /// A failure on one channel is logged and doesn't stop the others or throw.
+        /// </summary>
+        /// <returns>Whether at least one channel received the message, so a caller can keep it queued when none did.</returns>
+        public Task<bool> SendNotificationMessageAsync(ChatMessage message, CancellationToken cancellationToken)
+            => this.SendToNotificationChannelsAsync(channel => this.SendMessageAsync(channel, message, cancellationToken));
+
+        private async Task<bool> SendToNotificationChannelsAsync(Func<ChannelRef, Task> send)
         {
+            bool anySent = false;
             foreach (ChannelRef channel in this.notificationChannels)
             {
                 this.logger.LogInformation($"Attempting to send notification message to {channel}");
                 try
                 {
-                    await this.SendTextAsync(channel, text, cancellationToken, fileName, fileText);
+                    await send(channel);
+                    anySent = true;
                 }
                 catch (Exception ex)
                 {
                     this.logger.LogError(ex, $"Could not send notification message to {channel}");
                 }
             }
+
+            return anySent;
         }
 
         public Task SendMessageAsync(ChannelRef channel, ChatMessage message, CancellationToken cancellationToken)
