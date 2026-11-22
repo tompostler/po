@@ -43,6 +43,52 @@ namespace po.Platforms.Mattermost
             return await ReadAsync<MattermostPost>(response, cancellationToken);
         }
 
+        public async Task<MattermostTeam> GetTeamByNameAsync(string name, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.GetAsync($"teams/name/{Uri.EscapeDataString(name)}", cancellationToken);
+            return await ReadAsync<MattermostTeam>(response, cancellationToken);
+        }
+
+        /// <summary>
+        /// Lists the team's custom slash commands, leaving out built-in ones such as <c>/join</c>.
+        /// </summary>
+        public async Task<IReadOnlyList<MattermostCommand>> ListCommandsAsync(string teamId, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.GetAsync($"commands?team_id={Uri.EscapeDataString(teamId)}&custom_only=true", cancellationToken);
+            return await ReadAsync<List<MattermostCommand>>(response, cancellationToken);
+        }
+
+        public async Task<MattermostCommand> CreateCommandAsync(MattermostCommand command, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.PostAsJsonAsync("commands", command, JsonOptions, cancellationToken);
+            return await ReadAsync<MattermostCommand>(response, cancellationToken);
+        }
+
+        /// <summary>
+        /// Replaces the command whose <see cref="MattermostCommand.Id"/> matches, which can't move it to another team.
+        /// </summary>
+        public async Task<MattermostCommand> UpdateCommandAsync(MattermostCommand command, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.PutAsJsonAsync($"commands/{Uri.EscapeDataString(command.Id)}", command, JsonOptions, cancellationToken);
+            return await ReadAsync<MattermostCommand>(response, cancellationToken);
+        }
+
+        public async Task DeleteCommandAsync(string commandId, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.DeleteAsync($"commands/{Uri.EscapeDataString(commandId)}", cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
+        }
+
+        /// <summary>
+        /// Replaces the command's token, for when a listing doesn't include it.
+        /// </summary>
+        public async Task<string> RegenerateCommandTokenAsync(string commandId, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.PutAsync($"commands/{Uri.EscapeDataString(commandId)}/regen_token", content: null, cancellationToken);
+            MattermostTokenResponse token = await ReadAsync<MattermostTokenResponse>(response, cancellationToken);
+            return token.Token;
+        }
+
         /// <summary>
         /// Uploads <paramref name="content"/> to <paramref name="channelId"/> without posting it.
         /// Pass the returned file id in <see cref="MattermostPost.FileIds"/> to post it.
@@ -62,9 +108,18 @@ namespace po.Platforms.Mattermost
         }
 
         /// <summary>
-        /// Deserializes a successful response, or throws with Mattermost's error message, which <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/> would discard.
+        /// Deserializes a successful response, or throws like <see cref="EnsureSuccessAsync"/>.
         /// </summary>
         private static async Task<T> ReadAsync<T>(HttpResponseMessage response, CancellationToken cancellationToken)
+        {
+            await EnsureSuccessAsync(response, cancellationToken);
+            return await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
+        }
+
+        /// <summary>
+        /// Throws with Mattermost's error message for an unsuccessful response, which <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/> would discard.
+        /// </summary>
+        private static async Task EnsureSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
         {
             if (!response.IsSuccessStatusCode)
             {
@@ -88,8 +143,6 @@ namespace po.Platforms.Mattermost
                     inner: null,
                     response.StatusCode);
             }
-
-            return await response.Content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken);
         }
     }
 }

@@ -51,4 +51,47 @@ namespace po.Platforms.Mattermost
     public sealed record MattermostFileUploadResponse(IReadOnlyList<MattermostFileInfo> FileInfos);
 
     public sealed record MattermostError(string Id, string Message, int StatusCode);
+
+    public sealed record MattermostTeam(string Id, string Name);
+
+    /// <summary>
+    /// A custom slash command registered in a team.
+    /// </summary>
+    public sealed record MattermostCommand
+    {
+        public string Id { get; init; }
+
+        /// <summary>
+        /// Sent with every request for this command, so the receiver can check that it came from Mattermost.
+        /// </summary>
+        public string Token { get; init; }
+
+        public string TeamId { get; init; }
+
+        public string CreatorId { get; init; }
+
+        /// <summary>
+        /// The word after the slash, without the slash.
+        /// </summary>
+        public string Trigger { get; init; }
+
+        /// <summary>
+        /// <c>P</c> to POST the request to <see cref="Url"/>, or <c>G</c> to GET it.
+        /// </summary>
+        public string Method { get; init; }
+
+        public string Url { get; init; }
+
+        public string DisplayName { get; init; }
+
+        public string Description { get; init; }
+
+        public bool AutoComplete { get; init; }
+
+        public string AutoCompleteDesc { get; init; }
+
+        public string AutoCompleteHint { get; init; }
+    }
+
+    public sealed record MattermostTokenResponse(string Token);
 }
