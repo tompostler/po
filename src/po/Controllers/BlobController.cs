@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using po.Attributes;
@@ -12,8 +11,6 @@ namespace po.Controllers
     [ApiKeyOrSignedUrlAuthorization]
     public sealed class BlobController : ControllerBase
     {
-        public const string DownloadCorsPolicy = "BlobDownload";
-
         private static readonly FileExtensionContentTypeProvider ContentTypes = new();
 
         private readonly IPoStorage storage;
@@ -94,10 +91,10 @@ namespace po.Controllers
         /// <remarks>
         /// Any origin may read a blob, because the signed URL is already the credential and an <c>img</c> tag can load it from anywhere.
         /// Mattermost's full-size image viewer fetches the image with script, which needs that CORS allowance, unlike the inline preview.
+        /// The header is sent on every response, not only ones with an <c>Origin</c>, because the viewer reuses the copy the preview cached, and Cloudflare lets clients cache images for hours.
         /// The blob is served inline with its real content type, rather than as a download, so clients that respect the headers display it.
         /// </remarks>
         [HttpGet("{containerName}/{*blobName}")]
-        [EnableCors(DownloadCorsPolicy)]
         public async Task<IActionResult> Download(
             string containerName,
             string blobName,
@@ -119,6 +116,7 @@ namespace po.Controllers
                 return this.NotFound();
             }
 
+            this.Response.Headers.AccessControlAllowOrigin = "*";
             if (!ContentTypes.TryGetContentType(blobName, out string contentType))
             {
                 contentType = "application/octet-stream";

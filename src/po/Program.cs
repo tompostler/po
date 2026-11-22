@@ -12,10 +12,6 @@ _ = services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
     );
 
-_ = services.AddCors(options => options.AddPolicy(
-    po.Controllers.BlobController.DownloadCorsPolicy,
-    policy => policy.AllowAnyOrigin().WithMethods("GET")));
-
 _ = services.AddLogging(options => options.AddConsole());
 _ = services.AddApplicationInsightsTelemetry();
 
@@ -67,7 +63,6 @@ WebApplication app = builder.Build();
 
 _ = app.UseDeveloperExceptionPage();
 _ = app.UseRouting();
-_ = app.UseCors();
 
 _ = app.UseMiddleware<po.Middleware.ExceptionToStatusCodeMiddleware>();
 
