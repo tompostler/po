@@ -8,6 +8,7 @@ namespace po
         {
             _ = services.Configure<Api>(configuration.GetSection(nameof(Api)));
             _ = services.Configure<Discord>(configuration.GetSection(nameof(Discord)));
+            _ = services.Configure<Mattermost>(configuration.GetSection(nameof(Mattermost)));
             _ = services.AddOptions<Notifications>()
                 .Bind(configuration.GetSection(nameof(Notifications)))
                 .PostConfigure<IOptions<Discord>>((notifications, discord) =>
@@ -32,6 +33,19 @@ namespace po
         {
             public ulong BotPrimaryGuildId { get; set; }
             public ulong BotNotificationChannelId { get; set; }
+            public string BotToken { get; set; }
+        }
+        public sealed class Mattermost
+        {
+            /// <summary>
+            /// The server's root, without <c>/api/v4</c>.
+            /// Use the docker-network address, such as <c>http://mattermost:8065</c>, so API calls skip the public proxy.
+            /// </summary>
+            public Uri ApiBaseUri { get; set; }
+
+            /// <summary>
+            /// The access token of the <c>po</c> bot account.
+            /// </summary>
             public string BotToken { get; set; }
         }
         public sealed class Notifications
