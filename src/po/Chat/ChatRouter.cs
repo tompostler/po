@@ -20,6 +20,11 @@ namespace po.Chat
             this.platforms = platforms.ToDictionary(x => x.Name);
             this.notificationChannels = notificationOptions.Value.Channels.Select(ChannelRef.Parse).ToList();
             this.logger = logger;
+
+            if (this.notificationChannels.Count == 0)
+            {
+                this.logger.LogError($"No {nameof(Options.Notifications)}:{nameof(Options.Notifications.Channels)} are configured, so notifications will not be sent anywhere.");
+            }
         }
 
         public Task WaitUntilReadyAsync(string platformName, CancellationToken cancellationToken)

@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Options;
-
-namespace po
+﻿namespace po
 {
     public static class Options
     {
@@ -9,16 +7,7 @@ namespace po
             _ = services.Configure<Api>(configuration.GetSection(nameof(Api)));
             _ = services.Configure<Discord>(configuration.GetSection(nameof(Discord)));
             _ = services.Configure<Mattermost>(configuration.GetSection(nameof(Mattermost)));
-            _ = services.AddOptions<Notifications>()
-                .Bind(configuration.GetSection(nameof(Notifications)))
-                .PostConfigure<IOptions<Discord>>((notifications, discord) =>
-                {
-                    // Until notification channels are configured, keep notifying the Discord channel that has always been used.
-                    if (notifications.Channels.Count == 0 && discord.Value.BotNotificationChannelId != 0)
-                    {
-                        notifications.Channels.Add(new Chat.ChannelRef(Platforms.Discord.DiscordPlatform.PlatformName, discord.Value.BotNotificationChannelId.ToString()).ToString());
-                    }
-                });
+            _ = services.Configure<Notifications>(configuration.GetSection(nameof(Notifications)));
             _ = services.Configure<Sql>(configuration.GetSection(nameof(Sql)));
             _ = services.Configure<Storage>(configuration.GetSection(nameof(Storage)));
             return services;
@@ -32,7 +21,6 @@ namespace po
         public sealed class Discord
         {
             public ulong BotPrimaryGuildId { get; set; }
-            public ulong BotNotificationChannelId { get; set; }
             public string BotToken { get; set; }
         }
         public sealed class Mattermost
