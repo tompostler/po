@@ -8,6 +8,7 @@ namespace po.Platforms.Mattermost
     /// </summary>
     /// <remarks>
     /// Only commands the bot created are changed or deleted, so commands people made by hand are left alone, even one that takes a trigger po wants.
+    /// Built-in and plugin commands count as taken too, because Mattermost runs them ahead of custom commands, so a custom command with the same trigger would never be reached.
     /// Tokens are only held in memory, and a restart reconciles again, so deleting a command in Mattermost's settings is fixed by restarting po.
     /// </remarks>
     public sealed class MattermostCommandRegistrar : BackgroundService
@@ -59,7 +60,8 @@ namespace po.Platforms.Mattermost
         {
             MattermostUser me = await this.apiClient.GetMeAsync(cancellationToken);
             MattermostTeam team = await this.apiClient.GetTeamByNameAsync(this.options.TeamName, cancellationToken);
-            IReadOnlyList<MattermostCommand> existing = await this.apiClient.ListCommandsAsync(team.Id, cancellationToken);
+            IReadOnlyList<MattermostCommand> custom = await this.apiClient.ListCommandsAsync(team.Id, customOnly: true, cancellationToken);
+            IReadOnlyList<MattermostCommand> all = await this.apiClient.ListCommandsAsync(team.Id, customOnly: false, cancellationToken);
 
             var tokensByTrigger = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (CommandDefinition definition in this.dispatcher.Definitions)
@@ -67,7 +69,7 @@ namespace po.Platforms.Mattermost
                 try
                 {
                     MattermostCommand desired = this.ToMattermostCommand(definition, team.Id);
-                    MattermostCommand owned = existing.FirstOrDefault(x => x.CreatorId == me.Id && string.Equals(x.Trigger, desired.Trigger, StringComparison.OrdinalIgnoreCase));
+                    MattermostCommand owned = custom.FirstOrDefault(x => x.CreatorId == me.Id && string.Equals(x.Trigger, desired.Trigger, StringComparison.OrdinalIgnoreCase));
                     MattermostCommand registered;
                     if (owned != null && IsSame(owned, desired))
                     {
@@ -87,9 +89,9 @@ namespace po.Platforms.Mattermost
                         }, cancellationToken);
                         this.logger.LogInformation($"Updated Mattermost command /{registered.Trigger}.");
                     }
-                    else if (existing.Any(x => string.Equals(x.Trigger, desired.Trigger, StringComparison.OrdinalIgnoreCase)))
+                    else if (all.Concat(custom).Any(x => string.Equals(x.Trigger, desired.Trigger, StringComparison.OrdinalIgnoreCase)))
                     {
-                        this.logger.LogWarning($"Mattermost command /{desired.Trigger} already exists and wasn't created by po, so it's left alone and po won't answer it.");
+                        this.logger.LogWarning($"Mattermost command /{desired.Trigger} is taken by a built-in, a plugin or someone else's command, so po won't register or answer it.");
                         continue;
                     }
                     else
@@ -108,7 +110,7 @@ namespace po.Platforms.Mattermost
                 }
             }
 
-            foreach (MattermostCommand stale in existing.Where(x => x.CreatorId == me.Id && !this.dispatcher.TryGetCommand(x.Trigger, out _)))
+            foreach (MattermostCommand stale in custom.Where(x => x.CreatorId == me.Id && !this.dispatcher.TryGetCommand(x.Trigger, out _)))
             {
                 try
                 {

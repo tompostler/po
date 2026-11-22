@@ -56,6 +56,7 @@ Text longer than 16383 characters, the server's default `MaxPostSize`, is upload
 
 At startup, po makes the team's custom slash commands match its command definitions: it creates missing ones, updates changed ones, and deletes ones it no longer has.
 It only touches commands the bot created, so a command someone made by hand is left alone, even one with a trigger po wants; po logs a warning and doesn't answer that trigger.
+Built-in and plugin commands count as taken too, because Mattermost runs them ahead of custom commands, which is why po's Discord-only `/echo` was never ported.
 Each command's token comes from the same pass and is kept only in memory, so until a reconcile succeeds, the command endpoint rejects every request.
 There's no periodic reconcile, so if a command is deleted or edited in Mattermost's settings, restarting po puts it back.
 

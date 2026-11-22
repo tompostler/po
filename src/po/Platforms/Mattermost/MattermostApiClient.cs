@@ -53,11 +53,14 @@ namespace po.Platforms.Mattermost
         }
 
         /// <summary>
-        /// Lists the team's custom slash commands, leaving out built-in ones such as <c>/join</c>.
+        /// Lists the team's custom slash commands, with their tokens, or with <paramref name="customOnly"/> false, every command available in the team.
         /// </summary>
-        public async Task<IReadOnlyList<MattermostCommand>> ListCommandsAsync(string teamId, CancellationToken cancellationToken)
+        /// <remarks>
+        /// The full listing adds built-in commands such as <c>/join</c> and ones from plugins, but the server sanitizes the custom commands in it, which can strip their tokens.
+        /// </remarks>
+        public async Task<IReadOnlyList<MattermostCommand>> ListCommandsAsync(string teamId, bool customOnly, CancellationToken cancellationToken)
         {
-            using HttpResponseMessage response = await this.httpClient.GetAsync($"commands?team_id={Uri.EscapeDataString(teamId)}&custom_only=true", cancellationToken);
+            using HttpResponseMessage response = await this.httpClient.GetAsync($"commands?team_id={Uri.EscapeDataString(teamId)}&custom_only={(customOnly ? "true" : "false")}", cancellationToken);
             return await ReadAsync<List<MattermostCommand>>(response, cancellationToken);
         }
 
