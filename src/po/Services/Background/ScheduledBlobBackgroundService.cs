@@ -1,10 +1,10 @@
-﻿using Discord.WebSocket;
-using Microsoft.ApplicationInsights;
+﻿using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
+using po.Chat;
 using po.DataAccess;
-using po.Extensions;
+using po.Platforms.Discord;
 using po.Services.Po;
 using po.Utilities;
 
@@ -14,6 +14,7 @@ namespace po.Services.Background
     {
         private readonly IServiceProvider serviceProvider;
         private readonly PoImageService poImageService;
+        private readonly ChatRouter chatRouter;
         private readonly Delays delays;
         private readonly Sentinels sentinels;
         private readonly ILogger<ScheduledBlobBackgroundService> logger;
@@ -22,6 +23,7 @@ namespace po.Services.Background
         public ScheduledBlobBackgroundService(
             IServiceProvider serviceProvider,
             PoImageService poImageService,
+            ChatRouter chatRouter,
             Delays delays,
             Sentinels sentinels,
             ILogger<ScheduledBlobBackgroundService> logger,
@@ -29,6 +31,7 @@ namespace po.Services.Background
         {
             this.serviceProvider = serviceProvider;
             this.poImageService = poImageService;
+            this.chatRouter = chatRouter;
             this.delays = delays;
             this.sentinels = sentinels;
             this.logger = logger;
@@ -56,8 +59,7 @@ namespace po.Services.Background
 
                         if (nextScheduledBlob?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
-                            DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(stoppingToken);
-                            var channel = discordClient.GetChannel(nextScheduledBlob.ChannelId) as SocketTextChannel;
+                            var channel = new ChannelRef(DiscordPlatform.PlatformName, nextScheduledBlob.ChannelId.ToString());
 
                             TimeSpan? nextBlobIn = default;
                             if (nextScheduledBlobs.Count == 2)
@@ -65,14 +67,20 @@ namespace po.Services.Background
                                 nextBlobIn = nextScheduledBlobs.Last().ScheduledDate - nextScheduledBlob.ScheduledDate;
                             }
 
-                            await DiscordExtensions.SendSingleImageAsync(
-                                this.poImageService,
+                            PoImage image = await this.poImageService.PickUnseenAsync(
                                 nextScheduledBlob.ContainerName,
                                 nextScheduledBlob.Category,
                                 nextScheduledBlob.Username,
-                                (message) => channel.SendMessageAsync(message),
-                                (embed) => channel.SendMessageAsync(embed: embed),
                                 nextBlobIn);
+                            if (image == default)
+                            {
+                                await this.chatRouter.SendTextAsync(channel, PoImageService.NoneRemainingMessage(nextScheduledBlob.Category), stoppingToken);
+                            }
+                            else
+                            {
+                                await this.chatRouter.SendMessageAsync(channel, image.ToChatMessage(), stoppingToken);
+                                await this.poImageService.MarkSeenAsync(image);
+                            }
 
                             _ = poContext.ScheduledBlobs.Remove(nextScheduledBlob);
                             _ = await poContext.SaveChangesAsync(stoppingToken);

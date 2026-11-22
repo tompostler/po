@@ -60,13 +60,7 @@ namespace po.Extensions
             }
             else
             {
-                var builder = new EmbedBuilder()
-                {
-                    Title = image.Title,
-                    Description = image.Description,
-                    ImageUrl = image.ImageUrl.AbsoluteUri
-                };
-                await embedMessageResponse(builder.Build());
+                await embedMessageResponse(Platforms.Discord.DiscordPlatform.ToEmbed(image.ToChatMessage()));
 
                 await poImageService.MarkSeenAsync(image);
             }
