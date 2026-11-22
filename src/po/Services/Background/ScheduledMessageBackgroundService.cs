@@ -1,11 +1,10 @@
-﻿using Discord;
-using Discord.WebSocket;
-using Microsoft.ApplicationInsights;
+﻿using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.EntityFrameworkCore;
+using po.Chat;
 using po.DataAccess;
-using po.Extensions;
+using po.Platforms.Discord;
 using po.Utilities;
 
 namespace po.Services.Background
@@ -15,6 +14,7 @@ namespace po.Services.Background
         private readonly IServiceProvider serviceProvider;
         private readonly Delays delays;
         private readonly Sentinels sentinels;
+        private readonly ChatRouter chatRouter;
         private readonly ILogger<ScheduledMessageBackgroundService> logger;
         private readonly TelemetryClient telemetryClient;
 
@@ -22,12 +22,14 @@ namespace po.Services.Background
             IServiceProvider serviceProvider,
             Delays delays,
             Sentinels sentinels,
+            ChatRouter chatRouter,
             ILogger<ScheduledMessageBackgroundService> logger,
             TelemetryClient telemetryClient)
         {
             this.serviceProvider = serviceProvider;
             this.delays = delays;
             this.sentinels = sentinels;
+            this.chatRouter = chatRouter;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
         }
@@ -53,8 +55,7 @@ namespace po.Services.Background
 
                         if (nextScheduledMessage?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
-                            DiscordSocketClient discordClient = await this.sentinels.DiscordClient.WaitForCompletionAsync(stoppingToken);
-                            var channel = discordClient.GetChannel(nextScheduledMessage.ChannelId) as SocketTextChannel;
+                            var channel = new ChannelRef(DiscordPlatform.PlatformName, nextScheduledMessage.ChannelId.ToString());
 
                             TimeSpan? nextMessageIn = default;
                             if (nextScheduledMessages.Count == 2)
@@ -62,17 +63,14 @@ namespace po.Services.Background
                                 nextMessageIn = nextScheduledMessages.Last().ScheduledDate - nextScheduledMessage.ScheduledDate;
                             }
 
-                            _ = await channel.SendMessageAsync(
-                                embed: new EmbedBuilder()
+                            await this.chatRouter.SendMessageAsync(
+                                channel,
+                                new ChatMessage
                                 {
-                                    Author = new EmbedAuthorBuilder()
-                                    {
-                                        Name = nextScheduledMessage.Author
-                                    },
-                                    Description = nextScheduledMessage.Message,
-                                    Timestamp = nextScheduledMessage.CreatedDate
-                                }.Build(),
-                                options: stoppingToken.ToRO());
+                                    AuthorName = nextScheduledMessage.Author,
+                                    Text = nextScheduledMessage.Message,
+                                },
+                                stoppingToken);
 
                             _ = poContext.ScheduledMessages.Remove(nextScheduledMessage);
                             _ = await poContext.SaveChangesAsync(stoppingToken);
