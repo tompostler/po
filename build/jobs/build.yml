@@ -34,6 +34,13 @@ jobs:
       command: restore
       projects: src/po.slnx
 
+  - task: DotNetCoreCLI@2
+    displayName: Run tests
+    inputs:
+      command: test
+      projects: src/po.slnx
+      arguments: --no-restore
+
   - task: Docker@2
     inputs:
       containerRegistry: 6d165ea2-8078-41dd-baef-3f44bbc79e27

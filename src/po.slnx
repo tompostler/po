@@ -5,4 +5,5 @@
   </Configurations>
   <Project Path="_repo/_repo.csproj" />
   <Project Path="po/po.csproj" />
+  <Project Path="po.Tests/po.Tests.csproj" />
 </Solution>
