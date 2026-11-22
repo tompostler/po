@@ -42,6 +42,7 @@ _ = services.AddSingleton<po.Platforms.Mattermost.MattermostPlatform>();
 _ = services.AddSingleton<po.Chat.IChatPlatform>(provider => provider.GetRequiredService<po.Platforms.Mattermost.MattermostPlatform>());
 _ = services.AddHostedService(provider => provider.GetRequiredService<po.Platforms.Mattermost.MattermostPlatform>());
 _ = services.AddSingleton<po.Platforms.Mattermost.MattermostCommandTokens>();
+_ = services.AddHostedService<po.Platforms.Mattermost.MattermostCommandRegistrar>();
 
 _ = services.AddHostedService<po.Services.BotService>();
 _ = services.AddHostedService<po.Services.MigrationService>();

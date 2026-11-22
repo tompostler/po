@@ -20,7 +20,7 @@ During the move, one po instance serves both platforms, and Discord is removed o
 | `Notifications__Channels__N` | `mattermost:abc123…` | One entry per channel, in `platform:id` form, mixing platforms freely. |
 
 `ApiBaseUri` and `BotToken` are required: without them, po fails at startup with an error naming them.
-`TeamName` and `CommandCallbackUri` are read only by slash command registration, which isn't built yet.
+`TeamName` and `CommandCallbackUri` are read only by slash command registration, which logs an error and registers nothing without them.
 
 ## Networking
 
@@ -52,6 +52,13 @@ The API requires `message` even on attachment-only posts, so po sends an empty o
 An attachment's `fallback` is required and is what notifications show, so po fills it from the title, else the text, else the author.
 Text longer than 16383 characters, the server's default `MaxPostSize`, is uploaded and posted as a file instead.
 
+## Slash command registration
+
+At startup, po makes the team's custom slash commands match its command definitions: it creates missing ones, updates changed ones, and deletes ones it no longer has.
+It only touches commands the bot created, so a command someone made by hand is left alone, even one with a trigger po wants; po logs a warning and doesn't answer that trigger.
+Each command's token comes from the same pass and is kept only in memory, so until a reconcile succeeds, the command endpoint rejects every request.
+There's no periodic reconcile, so if a command is deleted or edited in Mattermost's settings, restarting po puts it back.
+
 ## Slash command replies
 
 A command's in-channel replies are ordinary posts by the bot, so there's no limit on how many it makes, and `/po reset` can post once per category.
@@ -69,3 +76,6 @@ That limit only matters for ephemeral replies, which today are only `/schedule-m
 2. Under **Integrations > Bot Accounts**, add a bot named `po`, and copy its access token into `Mattermost__BotToken`; it is shown only once.
 3. Add the bot to the team, and to each channel it should post in, with `/invite @po`.
 4. Copy each channel's id from **View Info** in the channel menu into a `mattermost:<id>` entry in `Notifications:Channels`.
+5. Under **Integrations > Integration Management**, enable custom slash commands.
+6. Set `Mattermost__TeamName` to the team's URL name, and `Mattermost__CommandCallbackUri` to po's internal-port endpoint.
+7. Team members can manage their own slash commands by default, so the bot needs nothing more; if registration logs a 403, make the bot a team admin rather than a system admin.
