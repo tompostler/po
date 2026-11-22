@@ -1,35 +1,89 @@
 using Discord;
 using Discord.WebSocket;
+using Microsoft.Extensions.Options;
 using po.Chat;
 using po.Extensions;
-using po.Utilities;
 
 namespace po.Platforms.Discord
 {
     /// <summary>
-    /// Sends to Discord through the socket client that <see cref="Services.BotService"/> logs in.
+    /// Owns the Discord socket client's login and lifetime, and sends to Discord through it.
     /// </summary>
-    public sealed class DiscordPlatform : IChatPlatform
+    public sealed class DiscordPlatform : IChatPlatform, IHostedService
     {
         public const string PlatformName = "discord";
 
-        private readonly Sentinels sentinels;
+        private readonly Options.Discord options;
         private readonly ILogger<DiscordPlatform> logger;
+        private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public DiscordPlatform(
-            Sentinels sentinels,
+            IOptions<Options.Discord> options,
             ILogger<DiscordPlatform> logger)
         {
-            this.sentinels = sentinels;
+            this.options = options.Value;
             this.logger = logger;
+
+            this.Client = new DiscordSocketClient();
+            this.Client.Log += this.Client_Log;
+            this.Client.Ready += this.Client_Ready;
         }
+
+        /// <summary>
+        /// The socket client, for <see cref="Services.BotService"/> to handle commands until they move behind the command abstraction.
+        /// Wait for <see cref="WaitUntilReadyAsync"/> before using anything that needs the guild cache.
+        /// </summary>
+        public DiscordSocketClient Client { get; }
 
         public string Name => PlatformName;
 
         public int MaxMessageLength => 2000;
 
-        public async Task WaitUntilReadyAsync(CancellationToken cancellationToken)
-            => _ = await this.sentinels.DiscordClient.WaitForCompletionAsync(cancellationToken);
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            string botToken = this.options.BotToken;
+            this.logger.LogInformation($"Token is {botToken?.Length.ToString() ?? "<null>"} characters.");
+
+            await this.Client.LoginAsync(TokenType.Bot, botToken);
+            await this.Client.StartAsync();
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await this.Client.LogoutAsync();
+            await this.Client.StopAsync();
+        }
+
+        /// <remarks>
+        /// Ready fires again after every reconnect, but only the first one matters here.
+        /// The handler must not wait on anything that sends, because Discord.Net runs it on the gateway task.
+        /// </remarks>
+        private Task Client_Ready()
+        {
+            _ = this.ready.TrySetResult();
+            return Task.CompletedTask;
+        }
+
+        private Task Client_Log(LogMessage arg)
+        {
+            LogLevel logLevel = arg.Severity switch
+            {
+                LogSeverity.Critical => LogLevel.Critical,
+                LogSeverity.Error => LogLevel.Error,
+                LogSeverity.Warning => LogLevel.Warning,
+                LogSeverity.Info => LogLevel.Information,
+                LogSeverity.Verbose => LogLevel.Trace,
+                LogSeverity.Debug => LogLevel.Debug,
+                _ => LogLevel.Information
+            };
+
+            this.logger.Log(logLevel, arg.ToString(prependTimestamp: false));
+
+            return Task.CompletedTask;
+        }
+
+        public Task WaitUntilReadyAsync(CancellationToken cancellationToken)
+            => this.ready.Task.WaitAsync(cancellationToken);
 
         public async Task SendTextAsync(ChannelRef channel, string text, CancellationToken cancellationToken)
         {
@@ -83,10 +137,10 @@ namespace po.Platforms.Discord
                 throw new ArgumentException($"{channel} is not a {PlatformName} channel.", nameof(channel));
             }
 
-            DiscordSocketClient client = await this.sentinels.DiscordClient.WaitForCompletionAsync(cancellationToken);
+            await this.WaitUntilReadyAsync(cancellationToken);
 
             this.logger.LogInformation($"Attempting to send to {channel}");
-            return await client.GetChannelAsync(ulong.Parse(channel.Id), cancellationToken.ToRO()) as IMessageChannel
+            return await this.Client.GetChannelAsync(ulong.Parse(channel.Id), cancellationToken.ToRO()) as IMessageChannel
                 ?? throw new InvalidOperationException($"{channel} was not found or is not a message channel.");
         }
     }

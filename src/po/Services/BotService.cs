@@ -8,26 +8,32 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using po.DataAccess;
 using po.Extensions;
+using po.Platforms.Discord;
 using po.Utilities;
 
 namespace po.Services
 {
-    public sealed class BotService : IHostedService
+    /// <summary>
+    /// Handles Discord slash commands and the <c>/po</c> text fallback, and registers the commands once <see cref="DiscordPlatform"/> is ready.
+    /// </summary>
+    public sealed class BotService : BackgroundService
     {
         private readonly IServiceProvider serviceProvider;
         private readonly IPoStorage poBlobStorage;
         private readonly Sentinels sentinels;
+        private readonly DiscordPlatform discordPlatform;
         private readonly Dictionary<string, DiscordImpl.SlashCommands.SlashCommandBase> slashCommands;
         private readonly Options.Discord options;
         private readonly ILogger<BotService> logger;
         private readonly TelemetryClient telemetryClient;
 
-        private DiscordSocketClient discordClient;
+        private readonly DiscordSocketClient discordClient;
 
         public BotService(
             IServiceProvider serviceProvider,
             IPoStorage poBlobStorage,
             Sentinels sentinels,
+            DiscordPlatform discordPlatform,
             IEnumerable<DiscordImpl.SlashCommands.SlashCommandBase> slashCommands,
             IOptions<Options.Discord> options,
             ILogger<BotService> logger,
@@ -36,44 +42,34 @@ namespace po.Services
             this.serviceProvider = serviceProvider;
             this.poBlobStorage = poBlobStorage;
             this.sentinels = sentinels;
+            this.discordPlatform = discordPlatform;
+            this.discordClient = discordPlatform.Client;
             this.slashCommands = slashCommands.ToDictionary(x => x.ExpectedCommand.Name);
             this.options = options.Value;
             this.logger = logger;
             this.telemetryClient = telemetryClient;
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            this.discordClient = new DiscordSocketClient();
-            this.discordClient.Log += this.DiscordClient_Log;
             this.discordClient.MessageReceived += this.DiscordClient_MessageReceived;
-
-            string botToken = this.options.BotToken;
-            this.logger.LogInformation($"Token is {botToken?.Length.ToString() ?? "<null>"} characters.");
-
-            await this.discordClient.LoginAsync(TokenType.Bot, botToken);
-            await this.discordClient.StartAsync();
-
-            this.discordClient.Ready += () => this.DiscordClient_Ready(cancellationToken);
             this.discordClient.SlashCommandExecuted += this.DiscordClient_SlashCommandExecuted;
-        }
 
-        private Task DiscordClient_Log(LogMessage arg)
-        {
-            LogLevel logLevel = arg.Severity switch
+            // This runs once, after the first Ready, rather than in a Ready handler.
+            // A Ready handler blocks the gateway task, and it fires again on every reconnect.
+            await this.discordPlatform.WaitUntilReadyAsync(stoppingToken);
+
+            using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>($"{this.GetType().FullName}.{nameof(ExecuteAsync)}");
+            try
             {
-                LogSeverity.Critical => LogLevel.Critical,
-                LogSeverity.Error => LogLevel.Error,
-                LogSeverity.Warning => LogLevel.Warning,
-                LogSeverity.Info => LogLevel.Information,
-                LogSeverity.Verbose => LogLevel.Trace,
-                LogSeverity.Debug => LogLevel.Debug,
-                _ => LogLevel.Information
-            };
-
-            this.logger.Log(logLevel, arg.ToString(prependTimestamp: false));
-
-            return Task.CompletedTask;
+                await this.EnsureDataModelIsUpToDateAsync(stoppingToken);
+                await this.RegisterSlashCommandsAsync(stoppingToken);
+            }
+            catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
+            {
+                // An unhandled exception here would stop the host
+                this.logger.LogError(ex, "Could not prepare slash commands.");
+            }
         }
 
         private async Task DiscordClient_MessageReceived(SocketMessage message)
@@ -123,17 +119,6 @@ namespace po.Services
             {
                 await (this.slashCommands["po"] as DiscordImpl.SlashCommands.PoCommand)?.HandleCommandAsync(this.discordClient, imessage);
             }
-        }
-
-        private async Task DiscordClient_Ready(CancellationToken cancellationToken)
-        {
-            using IOperationHolder<RequestTelemetry> op = this.telemetryClient.StartOperation<RequestTelemetry>($"{this.GetType().FullName}.{nameof(DiscordClient_Ready)}");
-
-            await this.EnsureDataModelIsUpToDateAsync(cancellationToken);
-            await this.RegisterSlashCommandsAsync(cancellationToken);
-            this.sentinels.DiscordClient.SignalCompletion(this.discordClient);
-
-            this.discordClient.Ready -= () => this.DiscordClient_Ready(cancellationToken);
         }
 
         private async Task EnsureDataModelIsUpToDateAsync(CancellationToken cancellationToken)
@@ -281,12 +266,6 @@ namespace po.Services
                     this.logger.LogError(nestedEx, "Could not respond again after initial exception.");
                 }
             }
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            await this.discordClient.LogoutAsync();
-            await this.discordClient.StopAsync();
         }
     }
 }
