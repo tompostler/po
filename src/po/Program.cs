@@ -37,6 +37,7 @@ _ = services.AddHostedService(provider => provider.GetRequiredService<po.Platfor
 _ = services.AddSingleton<po.Chat.ChatRouter>();
 _ = services.AddSingleton<po.Commands.CommandDispatcher>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.CommandList>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.ScheduleMessage>();
 
 _ = services.AddHttpClient<po.Platforms.Mattermost.MattermostApiClient>();
 _ = services.AddSingleton<po.Platforms.Mattermost.MattermostPlatform>();
