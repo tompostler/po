@@ -94,4 +94,19 @@ namespace po.Platforms.Mattermost
     }
 
     public sealed record MattermostTokenResponse(string Token);
+
+    /// <summary>
+    /// A reply to a slash command, either as the HTTP response to Mattermost's request or posted to its <c>response_url</c>.
+    /// </summary>
+    public sealed record MattermostCommandResponse
+    {
+        public const string Ephemeral = "ephemeral";
+
+        /// <summary>
+        /// <see cref="Ephemeral"/> for a reply only the invoking user sees, or <c>in_channel</c> for a regular post.
+        /// </summary>
+        public string ResponseType { get; init; }
+
+        public string Text { get; init; }
+    }
 }

@@ -45,6 +45,17 @@ The API requires `message` even on attachment-only posts, so po sends an empty o
 An attachment's `fallback` is required and is what notifications show, so po fills it from the title, else the text, else the author.
 Text longer than 16383 characters, the server's default `MaxPostSize`, is uploaded and posted as a file instead.
 
+## Slash command replies
+
+A command's in-channel replies are ordinary posts by the bot, so there's no limit on how many it makes, and `/po reset` can post once per category.
+
+Ephemeral replies, which only the person who ran the command sees, can't use `posts/ephemeral`, because its `create_post_ephemeral` permission is granted only to system admins, and no edition lets it be granted otherwise.
+Instead, the endpoint checks the token and parses the arguments before running anything, and returns a bad token or a parse error as an ephemeral HTTP response, which needs no permission.
+Otherwise it answers with an empty 200 right away and runs the command in the background, so it never runs into Mattermost's roughly 3-second limit on the first response.
+The running command's ephemeral replies go to the request's `response_url`, which Mattermost accepts 5 times within 30 minutes.
+That limit only matters for ephemeral replies, which today are only `/schedule-message`'s validation errors and confirmation, one per run.
+`response_url` is built from Mattermost's public site URL, so po keeps only its path and sends it to `ApiBaseUri`, like every other call.
+
 ## One-time server setup
 
 1. In the System Console, under **Integrations > Bot Accounts**, enable bot account creation.

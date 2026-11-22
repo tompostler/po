@@ -90,6 +90,19 @@ namespace po.Platforms.Mattermost
         }
 
         /// <summary>
+        /// Posts a delayed reply to a slash command's <paramref name="responseUrl"/>, which Mattermost accepts 5 times within 30 minutes of the command.
+        /// </summary>
+        /// <remarks>
+        /// The URL is built from Mattermost's public site URL, so only its path is kept and sent to <see cref="Options.Mattermost.ApiBaseUri"/>, like every other call.
+        /// </remarks>
+        public async Task PostCommandResponseAsync(Uri responseUrl, MattermostCommandResponse reply, CancellationToken cancellationToken)
+        {
+            var internalUrl = new Uri(this.httpClient.BaseAddress, responseUrl.PathAndQuery);
+            using HttpResponseMessage response = await this.httpClient.PostAsJsonAsync(internalUrl, reply, JsonOptions, cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
+        }
+
+        /// <summary>
         /// Uploads <paramref name="content"/> to <paramref name="channelId"/> without posting it.
         /// Pass the returned file id in <see cref="MattermostPost.FileIds"/> to post it.
         /// </summary>
