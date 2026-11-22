@@ -52,13 +52,11 @@ namespace po.Services.Background
 
                         if (nextScheduledMessage?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
-                            await this.chatRouter.SendMessageAsync(
+                            // Plain text reads like the reminder it usually is, rather than a card.
+                            // The name has no @, so posting doesn't ping the person who scheduled it, and asterisks keep an underscore in a username from ending the italics.
+                            await this.chatRouter.SendTextAsync(
                                 nextScheduledMessage.Channel,
-                                new ChatMessage
-                                {
-                                    AuthorName = nextScheduledMessage.Author,
-                                    Text = nextScheduledMessage.Message,
-                                },
+                                $"{nextScheduledMessage.Message}\n*scheduled by {nextScheduledMessage.Author}*",
                                 stoppingToken);
 
                             _ = poContext.ScheduledMessages.Remove(nextScheduledMessage);
