@@ -15,9 +15,12 @@ During the move, one po instance serves both platforms, and Discord is removed o
 |---|---|---|
 | `Mattermost__ApiBaseUri` | `http://mattermost:8065` | The server root, without `/api/v4`. |
 | `Mattermost__BotToken` | | The `po` bot account's access token. |
+| `Mattermost__TeamName` | `friends` | The team that slash commands are registered in, by its URL name. |
+| `Mattermost__CommandCallbackUri` | `http://po:8080/mattermost/command` | Where Mattermost sends slash commands, on the docker network. |
 | `Notifications__Channels__N` | `mattermost:abc123…` | One entry per channel, in `platform:id` form, mixing platforms freely. |
 
-Both settings are required: without them, po fails at startup with an error naming them.
+`ApiBaseUri` and `BotToken` are required: without them, po fails at startup with an error naming them.
+`TeamName` and `CommandCallbackUri` are read only by slash command registration, which isn't built yet.
 
 ## Networking
 

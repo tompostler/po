@@ -35,6 +35,16 @@
             /// The access token of the <c>po</c> bot account.
             /// </summary>
             public string BotToken { get; set; }
+
+            /// <summary>
+            /// The team the slash commands are registered in, by its URL name rather than its display name.
+            /// </summary>
+            public string TeamName { get; set; }
+
+            /// <summary>
+            /// Where Mattermost sends slash command requests: po's <c>mattermost/command</c> endpoint, such as <c>http://po:8080/mattermost/command</c> on the docker network.
+            /// </summary>
+            public Uri CommandCallbackUri { get; set; }
         }
         public sealed class Notifications
         {
