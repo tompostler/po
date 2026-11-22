@@ -47,21 +47,13 @@ namespace po.Services.Background
                     using (IServiceScope scope = this.serviceProvider.CreateScope())
                     using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
                     {
-                        List<Models.ScheduledMessage> nextScheduledMessages = await poContext.ScheduledMessages
+                        Models.ScheduledMessage nextScheduledMessage = await poContext.ScheduledMessages
                                                                                 .OrderBy(x => x.ScheduledDate)
-                                                                                .Take(2)
-                                                                                .ToListAsync(stoppingToken);
-                        Models.ScheduledMessage nextScheduledMessage = nextScheduledMessages.FirstOrDefault();
+                                                                                .FirstOrDefaultAsync(stoppingToken);
 
                         if (nextScheduledMessage?.ScheduledDate < DateTimeOffset.UtcNow)
                         {
                             var channel = new ChannelRef(DiscordPlatform.PlatformName, nextScheduledMessage.ChannelId.ToString());
-
-                            TimeSpan? nextMessageIn = default;
-                            if (nextScheduledMessages.Count == 2)
-                            {
-                                nextMessageIn = nextScheduledMessages.Last().ScheduledDate - nextScheduledMessage.ScheduledDate;
-                            }
 
                             await this.chatRouter.SendMessageAsync(
                                 channel,
