@@ -22,3 +22,5 @@ Mattermost is the only platform now, but the commands don't depend on it, so ano
 - `RequiresChannelEnablement` commands only run in channels where `/commandlist add` has enabled their `EnablementGroup`, which defaults to the command's name; commands that share a group are enabled together.
   `/commandlist` offers the groups from a list kept by hand in `CommandList.cs`, because building it from the definitions would be a dependency cycle, and `CommandListTests` fails if the two drift apart.
 - The `po` group's enablement row also holds the channel's image container, so any command in that group can read it, and `/commandlist remove po` forgets it.
+- Prefer separate commands to subcommands, as the `/po-*` image commands are: Mattermost's autocomplete only shows one description and one hint line per command, so each command's own hint is far more useful than a hint covering every subcommand.
+  `/commandlist` and `/po-configure` keep subcommands, because they're setup commands that are rarely typed.

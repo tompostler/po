@@ -75,7 +75,7 @@ There's no periodic reconcile, so if a command is deleted or edited in Mattermos
 
 ## Slash command replies
 
-A command's in-channel replies are ordinary posts by the bot, so there's no limit on how many it makes, and `/po reset` can post once per category.
+A command's in-channel replies are ordinary posts by the bot, so there's no limit on how many it makes, and `/po-reset` can post once per category.
 
 Ephemeral replies, which only the person who ran the command sees, can't use `posts/ephemeral`, because its `create_post_ephemeral` permission is granted only to system admins, and no edition lets it be granted otherwise.
 Instead, the endpoint checks the token and parses the arguments before running anything, and returns a bad token or a parse error as an ephemeral HTTP response, which needs no permission.

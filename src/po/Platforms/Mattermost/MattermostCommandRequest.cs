@@ -14,7 +14,7 @@ namespace po.Platforms.Mattermost
         public string Token { get; set; }
 
         /// <summary>
-        /// The trigger with its slash, such as <c>/po</c>.
+        /// The trigger with its slash, such as <c>/po-show</c>.
         /// </summary>
         [FromForm(Name = "command")]
         public string Command { get; set; }

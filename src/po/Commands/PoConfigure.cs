@@ -6,10 +6,10 @@ using po.Services.Po;
 namespace po.Commands
 {
     /// <summary>
-    /// Associates a channel with the image container that <c>/po</c> shows from, and rescans that container.
+    /// Associates a channel with the image container that the <c>/po-*</c> commands show from, and rescans that container.
     /// </summary>
     /// <remarks>
-    /// The association is the <c>RegistrationData</c> on the channel's <c>po</c> enablement row, so associating also enables <c>/po</c> in the channel, and <c>/commandlist remove po</c> forgets the association.
+    /// The association is the <c>RegistrationData</c> on the channel's <c>po</c> enablement row, so associating also enables the <c>/po-*</c> commands in the channel, and <c>/commandlist remove po</c> forgets the association.
     /// </remarks>
     public sealed class PoConfigure : ICommand
     {
@@ -32,7 +32,7 @@ namespace po.Commands
         public CommandDefinition Definition { get; } = new()
         {
             Name = "po-configure",
-            Description = "Associates this channel with a container of images for /po.",
+            Description = "Associates this channel with a container of images for the /po-* commands.",
             Subcommands =
             [
                 new SubcommandDefinition

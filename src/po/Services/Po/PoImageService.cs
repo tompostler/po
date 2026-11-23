@@ -22,7 +22,7 @@ namespace po.Services.Po
             this.poStorage = poStorage;
         }
 
-        public static string NoneRemainingMessage(string category) => $"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po reset category`";
+        public static string NoneRemainingMessage(string category) => $"Category prefix `{category ?? "(any)"}` has no images remaining. Try `/po-reset category`";
 
         /// <summary>
         /// Picks a random unseen image whose category starts with <paramref name="category"/>.

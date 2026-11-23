@@ -35,7 +35,12 @@ _ = services.AddSingleton<po.Commands.CommandDispatcher>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.CommandList>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.ScheduleMessage>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoConfigure>();
-_ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoCommand>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoShow>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoRandom>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoTimer>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoClear>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoReset>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoStatus>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.NukeMessages>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.NukeBotMessages>();
 
