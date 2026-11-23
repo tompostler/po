@@ -52,6 +52,12 @@ The two containers start together, so po retries `users/me` with backoff, up to 
 A 401 or 403 means the token is wrong, which retrying won't fix, so po logs an error and every Mattermost send fails immediately instead of waiting forever.
 Notifications fan out to channels one after another, so while Mattermost is still starting, channels listed after a Mattermost channel wait for it too.
 
+## Archived and deleted channels
+
+Once at startup, po checks every Mattermost channel it has rows for, and removes the enablement rows and scheduled items of any that were archived or permanently deleted, posting a "Removed …" summary to the notification channels.
+Mattermost usually archives rather than deletes, so archived counts as gone, while a channel the bot can't see (403) is kept, because that's a membership problem.
+The scheduled items matter most, because the scheduled-image service always takes the earliest row: one for a dead channel fails every minute and holds up every image scheduled after it, until po restarts and this cleanup removes it.
+
 ## Rendering
 
 A `ChatMessage` becomes one message attachment in `props.attachments`, a card with a colored edge, a title, text and an optional image.

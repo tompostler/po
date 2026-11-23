@@ -66,6 +66,9 @@ namespace po.Platforms.Mattermost
 
     public sealed record MattermostTeam(string Id, string Name);
 
+    /// <param name="DeleteAt">Unix time in milliseconds when the channel was archived, or 0 if it's active.</param>
+    public sealed record MattermostChannel(string Id, string Name, long DeleteAt);
+
     /// <summary>
     /// A custom slash command registered in a team.
     /// </summary>

@@ -64,6 +64,17 @@ namespace po.Platforms.Mattermost
             await EnsureSuccessAsync(response, cancellationToken);
         }
 
+        /// <summary>
+        /// Gets a channel, or null if it doesn't exist, which is what a permanently deleted channel looks like.
+        /// </summary>
+        public async Task<MattermostChannel> GetChannelAsync(string channelId, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.GetAsync($"channels/{Uri.EscapeDataString(channelId)}", cancellationToken);
+            return response.StatusCode == System.Net.HttpStatusCode.NotFound
+                ? null
+                : await ReadAsync<MattermostChannel>(response, cancellationToken);
+        }
+
         public async Task<MattermostTeam> GetTeamByNameAsync(string name, CancellationToken cancellationToken)
         {
             using HttpResponseMessage response = await this.httpClient.GetAsync($"teams/name/{Uri.EscapeDataString(name)}", cancellationToken);

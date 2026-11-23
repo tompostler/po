@@ -45,6 +45,7 @@ _ = services.AddSingleton<po.Chat.IChatPlatform>(provider => provider.GetRequire
 _ = services.AddHostedService(provider => provider.GetRequiredService<po.Platforms.Mattermost.MattermostPlatform>());
 _ = services.AddSingleton<po.Platforms.Mattermost.MattermostCommandTokens>();
 _ = services.AddHostedService<po.Platforms.Mattermost.MattermostCommandRegistrar>();
+_ = services.AddHostedService<po.Platforms.Mattermost.MattermostChannelCleanup>();
 
 _ = services.AddHostedService<po.Services.MigrationService>();
 _ = services.AddHostedService<po.Services.RestartNotificationService>();
