@@ -40,6 +40,8 @@ _ = services.AddSingleton<po.Commands.ICommand, po.Commands.CommandList>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.ScheduleMessage>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoConfigure>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.PoCommand>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.NukeMessages>();
+_ = services.AddSingleton<po.Commands.ICommand, po.Commands.NukeBotMessages>();
 
 _ = services.AddHttpClient<po.Platforms.Mattermost.MattermostApiClient>();
 _ = services.AddSingleton<po.Platforms.Mattermost.MattermostPlatform>();

@@ -7,7 +7,8 @@ During the move, one po instance serves both platforms, and Discord is removed o
 
 - Notifications go to every channel in `Notifications:Channels`, so a `mattermost:<channel-id>` entry there gets the restart notice, sync reports, random messages and the "Removed …" startup notice.
 - Scheduled images and scheduled messages go to whichever platform their row names, which is the platform of the channel they were scheduled from.
-- Slash commands are being ported one at a time; see [commands.md](commands.md). So far `/commandlist`, `/schedule-message`, `/po-configure` and `/po` run on Mattermost, and the nuke commands are still Discord-only.
+- Every slash command runs on Mattermost except `/echo`, which Mattermost's built-in `/echo` would shadow; see [commands.md](commands.md).
+- The nuke commands skip Mattermost's own system posts, such as join notices, and count posts from bot accounts and incoming webhooks as bot messages.
 
 ## Configuration
 

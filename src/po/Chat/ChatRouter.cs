@@ -98,6 +98,12 @@ namespace po.Chat
         public Task SendFileAsync(ChannelRef channel, string fileName, Stream content, string text, CancellationToken cancellationToken)
             => this.GetPlatform(channel.Platform).SendFileAsync(channel, fileName, content, text, cancellationToken);
 
+        public Task<IReadOnlyList<ChannelMessage>> ListMessagesAsync(ChannelRef channel, int limit, CancellationToken cancellationToken)
+            => this.GetPlatform(channel.Platform).ListMessagesAsync(channel, limit, cancellationToken);
+
+        public Task DeleteMessageAsync(ChannelRef channel, string messageId, CancellationToken cancellationToken)
+            => this.GetPlatform(channel.Platform).DeleteMessageAsync(channel, messageId, cancellationToken);
+
         private IChatPlatform GetPlatform(string platformName)
             => this.platforms.TryGetValue(platformName ?? string.Empty, out IChatPlatform platform)
                 ? platform
