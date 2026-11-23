@@ -1,8 +1,7 @@
 # Commands
 
-po's slash commands are written once against `Commands/`, and each platform supplies the registration, the request handling and a `CommandContext`.
-Only Mattermost runs these commands.
-The Discord commands in `DiscordImpl/` are older copies that keep working until Discord is removed, rather than ports, because the domain logic they call is already shared from `Services/Po/`.
+po's slash commands are written once against `Commands/`, and the platform supplies the registration, the request handling and a `CommandContext`.
+Mattermost is the only platform now, but the commands don't depend on it, so another platform would only need its own registrar, endpoint and context.
 
 ## Flow on Mattermost
 
@@ -21,4 +20,4 @@ The Discord commands in `DiscordImpl/` are older copies that keep working until 
 - Reply through the context: `ReplyAsync(text)` posts in the channel and falls back to a file for long text, and `ephemeral: true` shows a reply only to the person who ran the command.
   Ephemeral replies use Mattermost's `response_url`, which allows 5 replies per command, so keep them to one or two.
 - `RequiresChannelEnablement` commands only run in channels where `/commandlist add` has enabled them, and `/commandlist` offers them by a name list that's kept by hand in `CommandList.cs`.
-  That check reads the `SlashCommands` rows from Discord registration, so a new enablement-gated command also needs one until Discord is removed.
+  That list has to match the definitions, because the dispatcher checks the definition and `/commandlist` only offers the list; it can't be built from the definitions without a dependency cycle.

@@ -33,7 +33,6 @@ namespace po.Commands
         {
             Name = "po-configure",
             Description = "Associates this channel with a container of images for /po.",
-            Version = 1,
             Subcommands =
             [
                 new SubcommandDefinition
@@ -59,8 +58,8 @@ namespace po.Commands
         {
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-            SlashCommandChannel association = await poContext.SlashCommandChannels.SingleOrDefaultAsync(
-                x => x.SlashCommandName == PoCommandName && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id,
+            CommandChannel association = await poContext.CommandChannels.SingleOrDefaultAsync(
+                x => x.CommandName == PoCommandName && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id,
                 context.CancellationToken);
 
             if (context.Subcommand == "associate")
@@ -78,8 +77,8 @@ namespace po.Commands
                 {
                     if (association == default)
                     {
-                        association = new SlashCommandChannel { SlashCommandName = PoCommandName, Channel = context.Channel };
-                        _ = poContext.SlashCommandChannels.Add(association);
+                        association = new CommandChannel { CommandName = PoCommandName, Channel = context.Channel };
+                        _ = poContext.CommandChannels.Add(association);
                     }
                     association.RegistrationData = containerName;
                     _ = await poContext.SaveChangesAsync(context.CancellationToken);

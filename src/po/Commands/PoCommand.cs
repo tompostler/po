@@ -32,7 +32,6 @@ namespace po.Commands
         {
             Name = "po",
             Description = "Displays images from blob storage.",
-            Version = 1,
             RequiresChannelEnablement = true,
             Subcommands =
             [
@@ -89,8 +88,8 @@ namespace po.Commands
             using (IServiceScope scope = this.serviceProvider.CreateScope())
             using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
             {
-                containerName = await poContext.SlashCommandChannels
-                    .Where(x => x.SlashCommandName == this.Definition.Name && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id)
+                containerName = await poContext.CommandChannels
+                    .Where(x => x.CommandName == this.Definition.Name && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id)
                     .Select(x => x.RegistrationData)
                     .SingleOrDefaultAsync(context.CancellationToken);
             }

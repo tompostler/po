@@ -1,13 +1,16 @@
 # Mattermost
 
-po is moving from Discord to a self-hosted Mattermost server that runs in a container next to po's.
-During the move, one po instance serves both platforms, and Discord is removed once Mattermost covers everything.
+po runs against a self-hosted Mattermost server, in a container next to po's.
+It used to run on Discord; Discord was removed in one self-contained commit (v0.15), after a period of serving both platforms from one instance, so reverting that commit is most of the way back.
+A revert also has to undo that commit's `RemoveDiscord` migration first, with `dotnet ef database update PlatformAwareChannels`, because po only applies migrations forward; its `Down` restores `SlashCommands` with unregistered rows, so the Discord code registers its commands again on startup.
+The removal left the `Platform = 'discord'` rows in place, and kept `IChatPlatform` and the `Platform` column, so another platform stays cheap to add.
 
-## What goes to Mattermost today
+## What goes to Mattermost
 
-- Notifications go to every channel in `Notifications:Channels`, so a `mattermost:<channel-id>` entry there gets the restart notice, sync reports, random messages and the "Removed …" startup notice.
-- Scheduled images and scheduled messages go to whichever platform their row names, which is the platform of the channel they were scheduled from.
-- Every slash command runs on Mattermost except `/echo`, which Mattermost's built-in `/echo` would shadow; see [commands.md](commands.md).
+- Notifications go to every channel in `Notifications:Channels`: the restart notice, sync reports and random messages.
+- Scheduled images and scheduled messages go to the channel they were scheduled from.
+- Every slash command; see [commands.md](commands.md).
+  Discord's `/echo` was dropped rather than ported, because Mattermost's built-in `/echo` would shadow it.
 - The nuke commands skip Mattermost's own system posts, such as join notices, and count posts from bot accounts and incoming webhooks as bot messages.
 
 ## Configuration
@@ -51,7 +54,7 @@ Notifications fan out to channels one after another, so while Mattermost is stil
 
 ## Rendering
 
-A `ChatMessage` becomes one message attachment in `props.attachments`, Mattermost's equivalent of a Discord embed.
+A `ChatMessage` becomes one message attachment in `props.attachments`, a card with a colored edge, a title, text and an optional image.
 The API requires `message` even on attachment-only posts, so po sends an empty one.
 An attachment's `fallback` is required and is what notifications show, so po fills it from the title, else the text, else the author.
 Text longer than 16383 characters, the server's default `MaxPostSize`, is uploaded and posted as a file instead.
@@ -60,7 +63,7 @@ Text longer than 16383 characters, the server's default `MaxPostSize`, is upload
 
 At startup, po makes the team's custom slash commands match its command definitions: it creates missing ones, updates changed ones, and deletes ones it no longer has.
 It only touches commands the bot created, so a command someone made by hand is left alone, even one with a trigger po wants; po logs a warning and doesn't answer that trigger.
-Built-in and plugin commands count as taken too, because Mattermost runs them ahead of custom commands, which is why po's Discord-only `/echo` was never ported.
+Built-in and plugin commands count as taken too, because Mattermost runs them ahead of custom commands, which is why Discord's `/echo` was never ported.
 Each command's token comes from the same pass and is kept only in memory, so until a reconcile succeeds, the command endpoint rejects every request.
 There's no periodic reconcile, so if a command is deleted or edited in Mattermost's settings, restarting po puts it back.
 

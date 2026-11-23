@@ -1,19 +1,14 @@
 namespace po.Commands
 {
     /// <summary>
-    /// Describes a command independent of the platform that registers it, so Discord and Mattermost register the same command from one definition.
-    /// A command has either <see cref="Options"/> or <see cref="Subcommands"/>, never both, because Discord doesn't allow mixing them.
+    /// Describes a command independent of the platform that registers it, and doubles as the grammar <see cref="TextArgumentParser"/> parses its arguments with.
+    /// A command has either <see cref="Options"/> or <see cref="Subcommands"/>, never both, so the first word is unambiguously one or the other.
     /// </summary>
     public sealed record CommandDefinition
     {
         public required string Name { get; init; }
 
         public required string Description { get; init; }
-
-        /// <summary>
-        /// Bump this whenever the definition changes, so Discord re-registers the command instead of keeping its cached registration.
-        /// </summary>
-        public required int Version { get; init; }
 
         /// <summary>
         /// Whether the command only runs in channels where <c>/commandlist add</c> has enabled it.

@@ -100,12 +100,12 @@ namespace po.Services.Background
             }
             else if (randomMessage.Title.Contains("not successful") || randomMessage.Title.Contains("unsuccessful") || randomMessage.Title.Contains("failed"))
             {
-                // Discord.Net's Color.Red
+                // A soft red
                 return "#E74C3C";
             }
             else if (randomMessage.Title.Contains("successful"))
             {
-                // Discord.Net's Color.Green
+                // A soft green
                 return "#2ECC71";
             }
 

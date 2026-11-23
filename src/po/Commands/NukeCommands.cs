@@ -3,7 +3,7 @@ using po.Chat;
 namespace po.Commands
 {
     /// <summary>
-    /// Deletes a channel's messages older than a number of days, looking back over at most <see cref="MessageLimit"/> recent messages, as the Discord version does.
+    /// Deletes a channel's messages older than a number of days, looking back over at most <see cref="MessageLimit"/> recent messages.
     /// </summary>
     /// <remarks>
     /// The purge runs after the command endpoint has answered, so it can take as long as it needs; if a restart stops it partway, running it again picks up the rest.
@@ -63,7 +63,6 @@ namespace po.Commands
         {
             Name = "nuke-messages",
             Description = "Removes all messages from the channel older than a specified amount (if requested).",
-            Version = 1,
             RequiresChannelEnablement = true,
             Options = DaysOption,
         };
@@ -82,7 +81,6 @@ namespace po.Commands
         {
             Name = "nuke-bot-messages",
             Description = "Removes all bot messages from the channel older than a specified amount (if requested).",
-            Version = 1,
             RequiresChannelEnablement = true,
             Options = DaysOption,
         };

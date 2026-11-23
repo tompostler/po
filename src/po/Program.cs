@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using po;
-using po.DiscordImpl;
 using System.Text.Json.Serialization;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -31,9 +30,6 @@ _ = services.AddSingleton<po.Services.Po.PoStatusReport>();
 _ = services.AddSingleton<po.Utilities.Delays>();
 _ = services.AddSingleton<po.Utilities.Sentinels>();
 
-_ = services.AddSingleton<po.Platforms.Discord.DiscordPlatform>();
-_ = services.AddSingleton<po.Chat.IChatPlatform>(provider => provider.GetRequiredService<po.Platforms.Discord.DiscordPlatform>());
-_ = services.AddHostedService(provider => provider.GetRequiredService<po.Platforms.Discord.DiscordPlatform>());
 _ = services.AddSingleton<po.Chat.ChatRouter>();
 _ = services.AddSingleton<po.Commands.CommandDispatcher>();
 _ = services.AddSingleton<po.Commands.ICommand, po.Commands.CommandList>();
@@ -50,7 +46,6 @@ _ = services.AddHostedService(provider => provider.GetRequiredService<po.Platfor
 _ = services.AddSingleton<po.Platforms.Mattermost.MattermostCommandTokens>();
 _ = services.AddHostedService<po.Platforms.Mattermost.MattermostCommandRegistrar>();
 
-_ = services.AddHostedService<po.Services.BotService>();
 _ = services.AddHostedService<po.Services.MigrationService>();
 _ = services.AddHostedService<po.Services.RestartNotificationService>();
 
@@ -58,8 +53,6 @@ _ = services.AddHostedService<po.Services.Background.RandomMessageBackgroundServ
 _ = services.AddHostedService<po.Services.Background.ScheduledBlobBackgroundService>();
 _ = services.AddHostedService<po.Services.Background.ScheduledMessageBackgroundService>();
 _ = services.AddHostedService<po.Services.Background.SyncBlobMetadataBackgroundService>();
-
-_ = services.AddDiscordBotSlashCommands();
 
 WebApplication app = builder.Build();
 

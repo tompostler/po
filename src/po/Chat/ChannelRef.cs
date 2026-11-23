@@ -2,7 +2,7 @@ namespace po.Chat
 {
     /// <summary>
     /// Identifies a channel on a specific chat platform.
-    /// The string form is <c>platform:id</c>, such as <c>discord:123456789012345678</c>.
+    /// The string form is <c>platform:id</c>, such as <c>mattermost:4xp9fdt7pbgium38k5k6w95oex</c>.
     /// </summary>
     public readonly record struct ChannelRef(string Platform, string Id)
     {

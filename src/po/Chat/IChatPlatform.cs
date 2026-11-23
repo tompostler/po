@@ -1,12 +1,13 @@
 namespace po.Chat
 {
     /// <summary>
-    /// Sends messages to channels on one chat platform, such as Discord or Mattermost.
+    /// Sends messages to channels on one chat platform, such as Mattermost.
+    /// Mattermost is the only one now, but routing through this keeps adding another platform cheap.
     /// </summary>
     public interface IChatPlatform
     {
         /// <summary>
-        /// The platform's name as used in <see cref="ChannelRef.Platform"/>, such as <c>discord</c>.
+        /// The platform's name as used in <see cref="ChannelRef.Platform"/>, such as <c>mattermost</c>.
         /// </summary>
         string Name { get; }
 

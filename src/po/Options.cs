@@ -5,7 +5,6 @@
         public static IServiceCollection AddPoConfig(this IServiceCollection services, IConfiguration configuration)
         {
             _ = services.Configure<Api>(configuration.GetSection(nameof(Api)));
-            _ = services.Configure<Discord>(configuration.GetSection(nameof(Discord)));
             _ = services.Configure<Mattermost>(configuration.GetSection(nameof(Mattermost)));
             _ = services.Configure<Notifications>(configuration.GetSection(nameof(Notifications)));
             _ = services.Configure<Sql>(configuration.GetSection(nameof(Sql)));
@@ -18,11 +17,6 @@
             public string ApiKey { get; set; }
         }
 
-        public sealed class Discord
-        {
-            public ulong BotPrimaryGuildId { get; set; }
-            public string BotToken { get; set; }
-        }
         public sealed class Mattermost
         {
             /// <summary>

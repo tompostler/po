@@ -9,8 +9,8 @@ namespace po.Commands
     /// Enables, disables and lists the commands that only run in channels where they've been enabled.
     /// </summary>
     /// <remarks>
-    /// Whether a command needs enabling is read from the <c>SlashCommands</c> rows that Discord registration keeps, which stay until Discord is removed.
-    /// Removing a command deletes its <see cref="SlashCommandChannel"/> row, which for <c>po</c> also forgets the channel's container association, as on Discord.
+    /// The commands it offers are <see cref="CommandNames"/>, which has to match the definitions with <see cref="CommandDefinition.RequiresChannelEnablement"/>.
+    /// Removing a command deletes its <see cref="CommandChannel"/> row, which for <c>po</c> also forgets the channel's container association.
     /// </remarks>
     public sealed class CommandList : ICommand
     {
@@ -33,7 +33,6 @@ namespace po.Commands
         {
             Name = "commandlist",
             Description = "Configures which commands are enabled or disabled for a channel.",
-            Version = 1,
             Subcommands =
             [
                 new SubcommandDefinition
@@ -60,43 +59,37 @@ namespace po.Commands
         {
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
+            HashSet<string> enabled = (await poContext.CommandChannels
+                .Where(x => x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id)
+                .Select(x => x.CommandName)
+                .ToListAsync(context.CancellationToken))
+                .ToHashSet();
 
             if (context.Subcommand == "list")
             {
-                List<SlashCommand> commandsRequiringEnablement = await poContext.SlashCommands
-                    .Where(x => x.RequiresChannelEnablement)
-                    .Include(x => x.EnabledChannels)
-                    .ToListAsync(context.CancellationToken);
                 StringBuilder response = new();
                 _ = response.AppendLine("Enabled commands:");
-                _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => c.EnabledChannels.Any(x => x.Channel == context.Channel)).Select(x => x.Name)));
+                _ = response.AppendLine(string.Join(", ", CommandNames.Where(enabled.Contains)));
                 _ = response.AppendLine();
                 _ = response.AppendLine("Disabled commands:");
-                _ = response.AppendLine(string.Join(", ", commandsRequiringEnablement.Where(c => !c.EnabledChannels.Any(x => x.Channel == context.Channel)).Select(x => x.Name)));
+                _ = response.AppendLine(string.Join(", ", CommandNames.Where(x => !enabled.Contains(x))));
                 await context.ReplyAsync(response.ToString());
                 return;
             }
 
+            // The parser has already checked the name against CommandNames, the option's choices.
             string commandName = context.GetString("command-name");
-            SlashCommand command = await poContext.SlashCommands
-                .Include(x => x.EnabledChannels)
-                .SingleOrDefaultAsync(x => x.RequiresChannelEnablement && x.Name == commandName, context.CancellationToken);
-            bool enabled = command?.EnabledChannels.Any(x => x.Channel == context.Channel) == true;
-
-            if (command == default)
+            if (context.Subcommand == "add" && !enabled.Contains(commandName))
             {
-                await context.ReplyAsync($"Could not find `{commandName}` in data store.");
-            }
-            else if (context.Subcommand == "add" && !enabled)
-            {
-                command.EnabledChannels.Add(new SlashCommandChannel { SlashCommandName = command.Name, Channel = context.Channel });
+                _ = poContext.CommandChannels.Add(new CommandChannel { CommandName = commandName, Channel = context.Channel });
                 _ = await poContext.SaveChangesAsync(context.CancellationToken);
                 await context.ReplyAsync($"Enabled `{commandName}` for the current channel.");
             }
-            else if (context.Subcommand == "remove" && enabled)
+            else if (context.Subcommand == "remove" && enabled.Contains(commandName))
             {
-                command.EnabledChannels = command.EnabledChannels.Where(x => x.Channel != context.Channel).ToList();
-                _ = await poContext.SaveChangesAsync(context.CancellationToken);
+                _ = await poContext.CommandChannels
+                    .Where(x => x.CommandName == commandName && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id)
+                    .ExecuteDeleteAsync(context.CancellationToken);
                 await context.ReplyAsync($"Disabled `{commandName}` for the current channel.");
             }
             else

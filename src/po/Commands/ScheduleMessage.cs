@@ -26,7 +26,6 @@ namespace po.Commands
         {
             Name = "schedule-message",
             Description = "Schedules a message for delivery in the future.",
-            Version = 1,
             Options =
             [
                 new CommandOption { Name = "delay", Description = "The duration to wait expressed as a number suffixed with 'd', 'h', 'm', or 's' for scale.", Type = CommandOptionType.String, Required = true },

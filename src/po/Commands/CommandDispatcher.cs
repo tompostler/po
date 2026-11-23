@@ -9,9 +9,6 @@ namespace po.Commands
     /// <summary>
     /// Finds commands by name and runs them, enforcing channel enablement and turning a failure into a reply instead of an exception.
     /// </summary>
-    /// <remarks>
-    /// Modeled on the Discord dispatch in <see cref="Services.BotService"/>.
-    /// </remarks>
     public sealed class CommandDispatcher
     {
         private readonly Dictionary<string, ICommand> commands;
@@ -76,8 +73,8 @@ namespace po.Commands
         {
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
-            return await poContext.SlashCommandChannels.AnyAsync(
-                x => x.SlashCommandName == commandName && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id,
+            return await poContext.CommandChannels.AnyAsync(
+                x => x.CommandName == commandName && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id,
                 context.CancellationToken);
         }
     }

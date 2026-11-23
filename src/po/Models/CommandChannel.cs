@@ -4,11 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace po.Models
 {
-    public sealed class SlashCommandChannel
+    /// <summary>
+    /// A command enabled in a channel, and for <c>po</c>, the image container the channel is associated with.
+    /// </summary>
+    public sealed class CommandChannel
     {
         [Required]
         [MaxLength(32)]
-        public string SlashCommandName { get; set; }
+        public string CommandName { get; set; }
 
         [Required]
         [MaxLength(16)]
@@ -31,9 +34,12 @@ namespace po.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public DateTimeOffset RegistrationDate { get; set; }
 
+        /// <summary>
+        /// The associated container for <c>po</c>, and unused for other commands.
+        /// </summary>
         [MaxLength(64)]
         public string RegistrationData { get; set; }
 
-        public override string ToString() => $"{nameof(SlashCommandChannel)}: {this.SlashCommandName} in {this.Channel}";
+        public override string ToString() => $"{nameof(CommandChannel)}: {this.CommandName} in {this.Channel}";
     }
 }

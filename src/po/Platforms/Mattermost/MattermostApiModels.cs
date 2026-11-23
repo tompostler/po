@@ -36,7 +36,7 @@ namespace po.Platforms.Mattermost
     public sealed record MattermostListedPost(string Id, long CreateAt, string Type, IReadOnlyDictionary<string, System.Text.Json.JsonElement> Props);
 
     /// <summary>
-    /// A message attachment, Mattermost's equivalent of a Discord embed.
+    /// A message attachment: a card with a colored edge, a title, text and an optional image.
     /// </summary>
     public sealed record MattermostAttachment
     {

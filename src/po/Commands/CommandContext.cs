@@ -5,7 +5,7 @@ namespace po.Commands
 {
     /// <summary>
     /// One invocation of a command: who ran it, where, with which arguments, and how to reply.
-    /// Each platform implements it over its own payload, such as a Discord interaction or a Mattermost slash command request.
+    /// Each platform implements it over its own payload, such as a Mattermost slash command request.
     /// </summary>
     public abstract class CommandContext
     {
@@ -30,11 +30,6 @@ namespace po.Commands
         public long? GetInteger(string name) => this.GetOptionValue(name) as long?;
 
         public double? GetNumber(string name) => this.GetOptionValue(name) as double?;
-
-        /// <summary>
-        /// Tells the platform that a reply is coming, for a command that may take longer than Discord's 3-second limit on the first response.
-        /// </summary>
-        public abstract Task DeferAsync();
 
         /// <summary>
         /// Replies with <paramref name="text"/>, or with a file named <paramref name="fileName"/> if it's too long for the platform.

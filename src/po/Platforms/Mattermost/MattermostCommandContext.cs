@@ -42,11 +42,6 @@ namespace po.Platforms.Mattermost
 
         public override CancellationToken CancellationToken { get; }
 
-        /// <summary>
-        /// Does nothing, because the endpoint answers Mattermost before running the command.
-        /// </summary>
-        public override Task DeferAsync() => Task.CompletedTask;
-
         public override Task ReplyAsync(ChatMessage message)
             => this.platform.SendMessageAsync(this.Channel, message, this.CancellationToken);
 

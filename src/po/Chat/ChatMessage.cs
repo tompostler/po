@@ -1,7 +1,7 @@
 namespace po.Chat
 {
     /// <summary>
-    /// A rich message, such as a Discord embed or a Mattermost attachment, independent of the platform that will send it.
+    /// A rich message, such as a Mattermost attachment, independent of the platform that will send it.
     /// Every property is optional; each platform renders the ones that are set.
     /// </summary>
     public sealed record ChatMessage

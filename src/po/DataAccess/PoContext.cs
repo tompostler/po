@@ -12,8 +12,7 @@ namespace po.DataAccess
         public DbSet<RandomMessage> RandomMessages { get; set; }
         public DbSet<ScheduledBlob> ScheduledBlobs { get; set; }
         public DbSet<ScheduledMessage> ScheduledMessages { get; set; }
-        public DbSet<SlashCommand> SlashCommands { get; set; }
-        public DbSet<SlashCommandChannel> SlashCommandChannels { get; set; }
+        public DbSet<CommandChannel> CommandChannels { get; set; }
         public DbSet<SynchronizedBackgroundService> SynchronizedBackgroundServices { get; set; }
 
         public PoContext(DbContextOptions<PoContext> dbContextOptions, ILoggerFactory loggerFactory)
@@ -71,13 +70,10 @@ namespace po.DataAccess
                 .Property(x => x.CreatedDate)
                 .HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
-            _ = modelBuilder.Entity<SlashCommand>()
-                .HasKey(x => x.Name);
+            _ = modelBuilder.Entity<CommandChannel>()
+                .HasKey(x => new { x.CommandName, x.Platform, x.ChannelId });
 
-            _ = modelBuilder.Entity<SlashCommandChannel>()
-                .HasKey(x => new { x.SlashCommandName, x.Platform, x.ChannelId });
-
-            _ = modelBuilder.Entity<SlashCommandChannel>()
+            _ = modelBuilder.Entity<CommandChannel>()
                 .Property(x => x.RegistrationDate)
                 .HasDefaultValueSql("SYSDATETIMEOFFSET()");
 
@@ -88,7 +84,7 @@ namespace po.DataAccess
         }
 
         /// <summary>
-        /// Maps a <see cref="Chat.ChannelRef"/> to the same <c>Platform</c> and <c>ChannelId</c> columns that <see cref="SlashCommandChannel"/> declares directly.
+        /// Maps a <see cref="Chat.ChannelRef"/> to the same <c>Platform</c> and <c>ChannelId</c> columns that <see cref="CommandChannel"/> declares directly.
         /// </summary>
         private static void MapChannel(ComplexPropertyBuilder<Chat.ChannelRef> channel)
         {

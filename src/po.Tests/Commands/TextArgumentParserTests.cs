@@ -9,7 +9,6 @@ namespace po.Tests.Commands
         {
             Name = "po",
             Description = "Displays images.",
-            Version = 1,
             Subcommands =
             [
                 new SubcommandDefinition
@@ -31,7 +30,6 @@ namespace po.Tests.Commands
         {
             Name = "schedule-message",
             Description = "Schedules a message.",
-            Version = 1,
             Options =
             [
                 new CommandOption { Name = "delay", Description = "How long.", Type = CommandOptionType.String, Required = true },
