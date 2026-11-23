@@ -9,7 +9,7 @@ namespace po.Commands
     /// Enables, disables and lists the commands that only run in channels where they've been enabled.
     /// </summary>
     /// <remarks>
-    /// The commands it offers are <see cref="CommandNames"/>, which has to match the definitions with <see cref="CommandDefinition.RequiresChannelEnablement"/>.
+    /// The names it offers are <see cref="CommandNames"/>, which has to match the <see cref="CommandDefinition.EnablementGroup"/> of every definition with <see cref="CommandDefinition.RequiresChannelEnablement"/>.
     /// Removing a command deletes its <see cref="CommandChannel"/> row, which for <c>po</c> also forgets the channel's container association.
     /// </remarks>
     public sealed class CommandList : ICommand

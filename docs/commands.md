@@ -19,5 +19,6 @@ Mattermost is the only platform now, but the commands don't depend on it, so ano
 - A command name can't be one Mattermost already uses, such as `/echo`, because built-in and plugin commands run first; the registrar skips such a command with a warning.
 - Reply through the context: `ReplyAsync(text)` posts in the channel and falls back to a file for long text, and `ephemeral: true` shows a reply only to the person who ran the command.
   Ephemeral replies use Mattermost's `response_url`, which allows 5 replies per command, so keep them to one or two.
-- `RequiresChannelEnablement` commands only run in channels where `/commandlist add` has enabled them, and `/commandlist` offers them by a name list that's kept by hand in `CommandList.cs`.
-  That list has to match the definitions, because the dispatcher checks the definition and `/commandlist` only offers the list; it can't be built from the definitions without a dependency cycle.
+- `RequiresChannelEnablement` commands only run in channels where `/commandlist add` has enabled their `EnablementGroup`, which defaults to the command's name; commands that share a group are enabled together.
+  `/commandlist` offers the groups from a list kept by hand in `CommandList.cs`, because building it from the definitions would be a dependency cycle, and `CommandListTests` fails if the two drift apart.
+- The `po` group's enablement row also holds the channel's image container, so any command in that group can read it, and `/commandlist remove po` forgets it.

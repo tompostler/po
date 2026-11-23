@@ -11,9 +11,21 @@ namespace po.Commands
         public required string Description { get; init; }
 
         /// <summary>
-        /// Whether the command only runs in channels where <c>/commandlist add</c> has enabled it.
+        /// Whether the command only runs in channels where <c>/commandlist add</c> has enabled its <see cref="EnablementGroup"/>.
         /// </summary>
         public bool RequiresChannelEnablement { get; init; }
+
+        /// <summary>
+        /// The name <c>/commandlist</c> enables the command under, which defaults to <see cref="Name"/>.
+        /// Commands that share a group are enabled together, and the <c>po</c> group's enablement row also holds the channel's image container.
+        /// </summary>
+        public string EnablementGroup
+        {
+            get => this.enablementGroup ?? this.Name;
+            init => this.enablementGroup = value;
+        }
+
+        private readonly string enablementGroup;
 
         public IReadOnlyList<CommandOption> Options { get; init; } = [];
 

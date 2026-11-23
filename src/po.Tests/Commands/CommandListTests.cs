@@ -6,7 +6,7 @@ namespace po.Tests.Commands
     public sealed class CommandListTests
     {
         /// <summary>
-        /// A command that needs enabling but isn't offered by <c>/commandlist</c> can never run, and nothing else would notice.
+        /// A command whose enablement group isn't offered by <c>/commandlist</c> can never run, and nothing else would notice.
         /// </summary>
         [TestMethod]
         [DataRow("add")]
@@ -17,7 +17,7 @@ namespace po.Tests.Commands
                 .Where(x => typeof(ICommand).IsAssignableFrom(x) && !x.IsAbstract)
                 .Select(CreateForDefinition)
                 .ToList();
-            IEnumerable<string> needEnabling = commands.Where(x => x.Definition.RequiresChannelEnablement).Select(x => x.Definition.Name);
+            IEnumerable<string> needEnabling = commands.Where(x => x.Definition.RequiresChannelEnablement).Select(x => x.Definition.EnablementGroup).Distinct();
 
             CommandDefinition commandList = commands.OfType<CommandList>().Single().Definition;
             IReadOnlyList<string> offered = commandList.Subcommands.Single(x => x.Name == subcommand).Options.Single().Choices;

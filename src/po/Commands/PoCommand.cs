@@ -89,7 +89,7 @@ namespace po.Commands
             using (PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>())
             {
                 containerName = await poContext.CommandChannels
-                    .Where(x => x.CommandName == this.Definition.Name && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id)
+                    .Where(x => x.CommandName == this.Definition.EnablementGroup && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id)
                     .Select(x => x.RegistrationData)
                     .SingleOrDefaultAsync(context.CancellationToken);
             }

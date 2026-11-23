@@ -46,9 +46,9 @@ namespace po.Commands
 
             try
             {
-                if (command.Definition.RequiresChannelEnablement && !await this.IsEnabledAsync(command.Definition.Name, context))
+                if (command.Definition.RequiresChannelEnablement && !await this.IsEnabledAsync(command.Definition.EnablementGroup, context))
                 {
-                    await context.ReplyAsync($"`{command.Definition.Name}` is not enabled for the current channel. Try `/commandlist add {command.Definition.Name}`.", ephemeral: true);
+                    await context.ReplyAsync($"`{command.Definition.Name}` is not enabled for the current channel. Try `/commandlist add {command.Definition.EnablementGroup}`.", ephemeral: true);
                     return;
                 }
 
@@ -69,12 +69,12 @@ namespace po.Commands
             }
         }
 
-        private async Task<bool> IsEnabledAsync(string commandName, CommandContext context)
+        private async Task<bool> IsEnabledAsync(string enablementGroup, CommandContext context)
         {
             using IServiceScope scope = this.serviceProvider.CreateScope();
             using PoContext poContext = scope.ServiceProvider.GetRequiredService<PoContext>();
             return await poContext.CommandChannels.AnyAsync(
-                x => x.CommandName == commandName && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id,
+                x => x.CommandName == enablementGroup && x.Platform == context.Channel.Platform && x.ChannelId == context.Channel.Id,
                 context.CancellationToken);
         }
     }
