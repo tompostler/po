@@ -52,7 +52,7 @@ namespace po.Platforms.Mattermost
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 // An unhandled exception here would stop the host.
-                this.logger.LogError(ex, "Could not reconcile Mattermost slash commands, so none will be accepted until po restarts.");
+                this.logger.LogError(ex, $"Could not reconcile Mattermost slash commands, so none will be accepted until po restarts.{PermissionHint(ex)}");
             }
         }
 
@@ -106,7 +106,7 @@ namespace po.Platforms.Mattermost
                 }
                 catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
                 {
-                    this.logger.LogError(ex, $"Could not register Mattermost command /{definition.Name}.");
+                    this.logger.LogError(ex, $"Could not register Mattermost command /{definition.Name}.{PermissionHint(ex)}");
                 }
             }
 
@@ -119,7 +119,7 @@ namespace po.Platforms.Mattermost
                 }
                 catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
                 {
-                    this.logger.LogError(ex, $"Could not delete Mattermost command /{stale.Trigger}.");
+                    this.logger.LogError(ex, $"Could not delete Mattermost command /{stale.Trigger}.{PermissionHint(ex)}");
                 }
             }
 
@@ -146,6 +146,14 @@ namespace po.Platforms.Mattermost
                 AutoCompleteHint = hint,
             };
         }
+
+        /// <summary>
+        /// Points a 403 at the fix, because ordinary team members may not hold <c>manage_own_slash_commands</c>.
+        /// </summary>
+        private static string PermissionHint(Exception ex)
+            => ex is HttpRequestException { StatusCode: System.Net.HttpStatusCode.Forbidden }
+                ? " The bot needs manage_own_slash_commands in the team, so make it a team admin."
+                : string.Empty;
 
         private static bool IsSame(MattermostCommand existing, MattermostCommand desired)
             => existing.Method == desired.Method
