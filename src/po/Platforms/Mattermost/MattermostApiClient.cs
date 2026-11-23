@@ -46,6 +46,24 @@ namespace po.Platforms.Mattermost
             return await ReadAsync<MattermostPost>(response, cancellationToken);
         }
 
+        /// <summary>
+        /// Gets one page of the channel's posts, newest first.
+        /// </summary>
+        public async Task<MattermostPostList> GetChannelPostsAsync(string channelId, int page, int perPage, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.GetAsync($"channels/{Uri.EscapeDataString(channelId)}/posts?page={page}&per_page={perPage}", cancellationToken);
+            return await ReadAsync<MattermostPostList>(response, cancellationToken);
+        }
+
+        /// <summary>
+        /// Deletes a post, which for someone else's post needs <c>delete_others_posts</c>, held by team admins.
+        /// </summary>
+        public async Task DeletePostAsync(string postId, CancellationToken cancellationToken)
+        {
+            using HttpResponseMessage response = await this.httpClient.DeleteAsync($"posts/{Uri.EscapeDataString(postId)}", cancellationToken);
+            await EnsureSuccessAsync(response, cancellationToken);
+        }
+
         public async Task<MattermostTeam> GetTeamByNameAsync(string name, CancellationToken cancellationToken)
         {
             using HttpResponseMessage response = await this.httpClient.GetAsync($"teams/name/{Uri.EscapeDataString(name)}", cancellationToken);

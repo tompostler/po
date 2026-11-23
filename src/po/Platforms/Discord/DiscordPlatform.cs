@@ -108,6 +108,16 @@ namespace po.Platforms.Discord
             _ = await messageChannel.SendFileAsync(content, fileName, text, options: cancellationToken.ToRO());
         }
 
+        /// <remarks>
+        /// Not supported, because the Discord nuke commands use Discord.Net directly and are removed with Discord.
+        /// </remarks>
+        public Task<IReadOnlyList<ChannelMessage>> ListMessagesAsync(ChannelRef channel, int limit, CancellationToken cancellationToken)
+            => throw new NotSupportedException($"{PlatformName} doesn't list messages through {nameof(IChatPlatform)}.");
+
+        /// <inheritdoc cref="ListMessagesAsync"/>
+        public Task DeleteMessageAsync(ChannelRef channel, string messageId, CancellationToken cancellationToken)
+            => throw new NotSupportedException($"{PlatformName} doesn't delete messages through {nameof(IChatPlatform)}.");
+
         public static Embed ToEmbed(ChatMessage message)
         {
             var builder = new EmbedBuilder

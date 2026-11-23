@@ -99,6 +99,56 @@ namespace po.Platforms.Mattermost
                 cancellationToken);
         }
 
+        public async Task<IReadOnlyList<ChannelMessage>> ListMessagesAsync(ChannelRef channel, int limit, CancellationToken cancellationToken)
+        {
+            const int PageSize = 200;
+            string channelId = await this.GetChannelIdAsync(channel, cancellationToken);
+
+            var messages = new List<ChannelMessage>();
+            for (int page = 0; messages.Count < limit; page++)
+            {
+                MattermostPostList posts = await this.apiClient.GetChannelPostsAsync(channelId, page, PageSize, cancellationToken);
+                foreach (MattermostListedPost post in posts.Order.Select(id => posts.Posts[id]))
+                {
+                    // Mattermost's own posts, such as join notices, aren't messages anyone sent.
+                    if (post.Type?.StartsWith("system_", StringComparison.Ordinal) == true)
+                    {
+                        continue;
+                    }
+
+                    messages.Add(new ChannelMessage(
+                        post.Id,
+                        DateTimeOffset.FromUnixTimeMilliseconds(post.CreateAt),
+                        IsTrueProp(post, "from_bot") || IsTrueProp(post, "from_webhook")));
+                    if (messages.Count == limit)
+                    {
+                        break;
+                    }
+                }
+
+                if (posts.Order.Count < PageSize)
+                {
+                    break;
+                }
+            }
+
+            return messages;
+        }
+
+        public async Task DeleteMessageAsync(ChannelRef channel, string messageId, CancellationToken cancellationToken)
+        {
+            _ = await this.GetChannelIdAsync(channel, cancellationToken);
+            await this.apiClient.DeletePostAsync(messageId, cancellationToken);
+        }
+
+        /// <summary>
+        /// Mattermost sets <c>from_bot</c> on posts by bot accounts and <c>from_webhook</c> on incoming-webhook posts, both as the string <c>"true"</c>.
+        /// </summary>
+        private static bool IsTrueProp(MattermostListedPost post, string name)
+            => post.Props != null
+                && post.Props.TryGetValue(name, out System.Text.Json.JsonElement value)
+                && (value.ValueKind == System.Text.Json.JsonValueKind.True || (value.ValueKind == System.Text.Json.JsonValueKind.String && value.GetString() == "true"));
+
         private static MattermostAttachment ToAttachment(ChatMessage message) => new()
         {
             // Shown in notifications and anywhere else the attachment can't render.
@@ -120,7 +170,7 @@ namespace po.Platforms.Mattermost
 
             await this.WaitUntilReadyAsync(cancellationToken);
 
-            this.logger.LogInformation($"Attempting to send to {channel}");
+            this.logger.LogInformation($"Calling Mattermost for {channel}");
             return channel.Id;
         }
     }

@@ -24,6 +24,18 @@ namespace po.Platforms.Mattermost
     public sealed record MattermostPostProps(IReadOnlyList<MattermostAttachment> Attachments);
 
     /// <summary>
+    /// A page of a channel's posts: <see cref="Order"/> holds their ids newest first, and <see cref="Posts"/> holds the posts by id.
+    /// </summary>
+    public sealed record MattermostPostList(IReadOnlyList<string> Order, IReadOnlyDictionary<string, MattermostListedPost> Posts);
+
+    /// <summary>
+    /// A post as listed, which is read rather than sent, so its props stay raw: other integrations' props can have any shape.
+    /// </summary>
+    /// <param name="CreateAt">Unix time in milliseconds.</param>
+    /// <param name="Type">Empty for an ordinary post, or a value such as <c>system_join_channel</c> for one Mattermost made itself.</param>
+    public sealed record MattermostListedPost(string Id, long CreateAt, string Type, IReadOnlyDictionary<string, System.Text.Json.JsonElement> Props);
+
+    /// <summary>
     /// A message attachment, Mattermost's equivalent of a Discord embed.
     /// </summary>
     public sealed record MattermostAttachment

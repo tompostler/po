@@ -29,5 +29,12 @@ namespace po.Chat
         /// Sends <paramref name="content"/> as an attached file named <paramref name="fileName"/>, with <paramref name="text"/> as the accompanying message.
         /// </summary>
         Task SendFileAsync(ChannelRef channel, string fileName, Stream content, string text, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Lists up to <paramref name="limit"/> of the channel's most recent messages, newest first, leaving out the platform's own system messages, such as join notices.
+        /// </summary>
+        Task<IReadOnlyList<ChannelMessage>> ListMessagesAsync(ChannelRef channel, int limit, CancellationToken cancellationToken);
+
+        Task DeleteMessageAsync(ChannelRef channel, string messageId, CancellationToken cancellationToken);
     }
 }
