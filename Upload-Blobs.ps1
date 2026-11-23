@@ -150,6 +150,6 @@ end {
   Write-Host "Overwritten: $overwritten" -ForegroundColor Yellow;
   Write-Host "Skipped:     $skipped" -ForegroundColor DarkGray;
   Write-Host "Deleted:     $deleted" -ForegroundColor Red;
-  Write-Host"Total:       $($uploaded + $overwritten + $skipped + $deleted)" -ForegroundColor Cyan ;
+  Write-Host "Total:       $($uploaded + $overwritten + $skipped + $deleted)" -ForegroundColor Cyan ;
   Write-Host;
 }
